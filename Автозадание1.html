@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+ <head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, inicial-scale=1">
+   <meta name="description" content="Первое автозадание курса веб-программированиа">
+  <title>Решение СЛАУ kramer_</title>
+   
+   
+   <style>
+     body {font-family: system-ui, Arial, sans-serif; padding: 20px;}
+     .row {margin: 12px 0;}
+     label {display: inline-block; min-width: 26px;}
+     input[type="number"]{width: 80px; padding: 6px;}
+     #bt {padding: 8px 14px; cursor: pointer;}
+     .eq {font-weight: 600; margin: 4px 0;}
+     .note {color:#555; font-size: 0.9rem;}
+   </style>
+   
+   
+ </head>
+  
+  
+ <body>
+   <div class="note">Ключ:
+     <select>
+       <option selected>kramer_</option>
+     </select>
+   </div>
+   
+   <h4><strong>nicarry</strong></h4>
+   
+   <div class="eq">
+     <input id="n1" type="number" value="2"> x +
+     <input id="n2" type="number" value="3"> y =
+     <input id="n3" type="number" value="18">
+   </div>
+   
+   <div class="eq">
+     <input id="n4" type="number" value="4"> x +
+     <input id="n5" type="number" value="-5"> y =
+     <input id="n6" type="number" value="-8">
+   </div>
+   
+   <div class="row">
+     <button id="bt">Вычислить</button>
+   </div>
+   
+   <div class="row">
+     x: <input id="result1" type="text" readonly> &nbsp;
+     y: <input id="result2" type="text" readonly>
+   </div>
+   
+   
+   <script>
+     function solveSystem(){
+     	var a = Number(document.getElementById('n1').value);
+     	var b = Number(document.getElementById('n2').value);
+     	var c = Number(document.getElementById('n3').value);
+     	var d = Number(document.getElementById('n4').value);
+     	var e = Number(document.getElementById('n5').value);
+     	var f = Number(document.getElementById('n6').value);
+       
+     	var det = a*e - b*d;  
+       	if (det === 0){
+        	alert('Детермниант = 0: нет единственного решения');
+          document.getElementById('result1').value='';
+          document.getElementById('result2').value='';
+          return;
+        }
+       var x = (c*e - b*f) / det;
+       var y = (a*f - c*d) / det;
+       
+       document.getElementById('result1').value= x;	   			   document.getElementById('result2').value= y;	
+     }
+	
+                                                         		document.getElementById('bt').addEventListener('click', solveSystem);
+   </script>
+
+ </body>
+</html>
