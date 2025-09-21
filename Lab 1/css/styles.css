@@ -1,0 +1,72 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: system-ui, Arial, sans-serif;
+  line-height: 1.4;
+  color: #222;
+  background: #fafafa;
+}
+.container { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
+
+
+.site-header { background: #fff; border-bottom: 1px solid #e3e3e3; position: sticky; top: 0; }
+.header-inner { display: flex; align-items: center; justify-content: space-between; }
+.logo { margin: 0; padding: 12px 0; font-size: 20px; }
+.main-nav a { margin-right: 12px; font-size: 14px; text-decoration: none; color: #333; }
+.main-nav a:last-child { margin-right: 0; }
+.main-nav a:hover { text-decoration: underline; }
+
+
+.page { display: grid; grid-template-columns: 1fr 320px; gap: 16px; padding: 16px 0; }
+@media (max-width: 900px) { .page { grid-template-columns: 1fr; } }
+
+
+.catalog h2, .cart h2, .checkout h2 { margin-top: 0; }
+
+
+.product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 900px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .product-grid { grid-template-columns: 1fr; } }
+
+.product-card {
+  background: #fff; border: 1px solid #e3e3e3; border-radius: 8px;
+  padding: 12px; display: flex; flex-direction: column;
+}
+.flag-preview {
+  background: #f0f0f0; height: 120px; border-radius: 6px; margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.flag-emoji { font-size: 56px; line-height: 1; }
+.product-title { font-size: 16px; margin: 6px 0; }
+.product-price { font-weight: 600; margin: 6px 0 10px; }
+
+
+.btn {
+  display: inline-block; padding: 8px 12px; border: 1px solid #333;
+  background: #fff; cursor: pointer; border-radius: 6px;
+}
+.btn:hover { background: #f2f2f2; }
+.btn-checkout { width: 100%; text-align: center; margin-top: 8px; }
+
+
+.cart {
+  background: #fff; border: 1px solid #e3e3e3; border-radius: 8px;
+  padding: 12px; height: fit-content;
+}
+.cart-items { list-style: none; margin: 0; padding: 0; min-height: 40px; }
+.cart-summary {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;
+}
+
+
+.checkout { padding: 16px 0 32px; }
+.order-form { max-width: 520px; }
+.form-row { display: flex; flex-direction: column; margin-bottom: 10px; }
+.form-row label { margin-bottom: 4px; font-size: 14px; }
+.form-row input {
+  padding: 8px; border: 1px solid #ccc; border-radius: 6px; background: #fff;
+}
+
+
+.site-footer { border-top: 1px solid #e3e3e3; padding: 16px 0; text-align: center; background: #fff; }
