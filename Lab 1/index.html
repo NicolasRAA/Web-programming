@@ -1,11 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>World Flags Shop</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
-    
+    <header class = "site-header">
+        <div class = "container header-inner">
+            <h1 class = "logo">World Flags Shop</h1>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="#catalog">Catalog</a>
+                <a href="#cart">Cart</a>
+                <a href="#checkout">Checkout</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container page">
+        <section id="catalog" class="catalog" aria-label="Prodcuts">
+            <h2>Flags Catalog</h2>
+            <div class="product-grid"></div>
+        </section>
+
+        <aside id="cart" class="cart" aria-label="Shopping cart">
+            <h2>Your Cart</h2>
+            <ul id="cart-items" class="cart-items"></ul>
+            <div class="cart-summary">
+                <span>Total:</span>
+                <strong id="cart-total">$0.00</strong>
+            </div>
+            <a class="btn btn-checkout" href="#checkout" id="checkout-link">Go to checkout</a>
+        </aside>
+    </main>
+
+    <section id="checkout" class="checkout container">
+        <h2>Checkout</h2>
+    </section>
+
+    <footer class="site-footer">
+        <div class="container">
+            <small>&copy; 2025 World Flags Shop</small>
+        </div>
+    </footer>
+
+    <script src="js/app.js" defer></script>
 </body>
+
 </html>
