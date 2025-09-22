@@ -25,7 +25,7 @@
     }
     
     function wireNewAddByttons(scope){
-        scope.wireNewAddByttons(".add-to-cart").forEach(btn => {
+        scope.querySelectorAll(".add-to-cart").forEach(btn => {
             btn.addEventListener("click", onAddToCart);
         });
     }
@@ -64,7 +64,7 @@
             carTotalEl.textContent = "$0.00";
             return;
           }          
-          
+
         cartList.innerHTML = "";
         let total = 0;
 
