@@ -101,7 +101,10 @@
 
             <div class="form-row">
                 <label for="phone">Phone number</label>
-                <input id="phone" name="phone" type="tel" required>
+                <input id="phone" name="phone" type="tel" required
+                inputmode="tel" autocomplete="tel"
+                pattern="^\+?[0-9\s\-\(\)]{7,20}$"
+                title="Use digits and +, -, ( ) only, 7–20 characters">
             </div>
 
             <button type="submit" class="btn">Create order</button>
