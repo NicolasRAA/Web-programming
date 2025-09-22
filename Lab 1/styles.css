@@ -45,6 +45,13 @@ body {
 .hidden { display: none; }
 
 /* Buttons */
+.btn-primary{
+  background: rgb(124, 205, 2);
+  border-color: lightgreen;
+  color: black;
+}
+.btn-primary:hover {background: #77e955;}
+
 .btn-secondary {
   margin: 10px auto; 
   display: block;
