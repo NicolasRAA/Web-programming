@@ -40,14 +40,14 @@
             total += subtotal;
 
             li.innerHTML = `
-                <div class = "cart-line">
-                    <span class = "title">${item.title}</span>
-                    <span class = "price">${item.price}</span>
+                <div class="cart-line">
+                    <span class="title">${item.title}</span>
+                    <span class="price">${item.price}</span>
                 </div>
-                <div class = "cart-controls">
-                    <button class = "qty-decrease" data-id="${item.id}" aria-label = "Decrease">-</button>
-                    <input class = "qty-input" type = "number" min = "1" value = "${item.qty}" data-id = "${item.id}>
-                    <button class = "qty-increase" data-id = "${item.id} aria-label = "Increase">+</button>
+                <div class="cart-controls">
+                    <button class="qty-decrease" data-id="${item.id}" aria-label="Decrease">-</button>
+                    <input class="qty-input" type="number" min="1" value="${item.qty}" data-id="${item.id}">
+                    <button class = "qty-increase" data-id = "${item.id}" aria-label="Increase">+</button>
                     <button class = "remove-item" data-id = "${item.id}">Remove</button>
                     <span class = "subtotal">$${subtotal.toFixed(2)}</span>
                 </div>
@@ -71,9 +71,9 @@
         }
 
         if (e.target.classList.contains("remove-item")){
-            const idx = cart.findIndex((id) => it.id === id);
+            const idx = cart.findIndex((it) => it.id === id);
             if (idx >= 0){
-                cart.splicee(idx, 1);
+                cart.splice(idx, 1);
                 renderCart();
             }
         }
