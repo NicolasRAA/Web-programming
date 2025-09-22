@@ -7,6 +7,8 @@
     const cartList = document.getElementById("cart-items");
     const carTotalEl = document.getElementById("cart-total");
     const orderForm = document.getElementById("order-form");
+    const showMoreBtn = document.getElementById("btn-show-more");
+    const moreProducts = document.getElementById("more-products");
 
     loadCart();
     renderCart();
@@ -22,6 +24,21 @@
         orderForm.addEventListener("input", onFormInput);
     }
     
+    function wireNewAddByttons(scope){
+        scope.wireNewAddByttons(".add-to-cart").forEach(btn => {
+            btn.addEventListener("click", onAddToCart);
+        });
+    }
+
+    if (showMoreBtn && moreProducts){
+        showMoreBtn.addEventListener("click", () => {
+            moreProducts.classList.toggle("hidden");
+            const opened = !moreProducts.classList.contains("hidden");
+            showMoreBtn.textContent = opened ? "Show less" : "Show more";
+            showMoreBtn.setAttribute("aria-expanded", opened ? "true" : "false");
+            if (opened) wireNewAddByttons(moreProducts);
+        });
+    }
 
     function onAddToCart(e){
         const btn = e.currentTarget;
