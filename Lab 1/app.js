@@ -1,5 +1,6 @@
 (function (){
     const STORAGE_KEY ="wf.cart";
+    const FORM_KEY="wf.checkout"
     let cart = [];
 
     const addButtons = document.querySelectorAll(".add-to-cart");
@@ -9,6 +10,7 @@
 
     loadCart();
     renderCart();
+    loadFormData();
 
     addButtons.forEach((btn) => {
         btn.addEventListener("click", onAddToCart);
@@ -17,7 +19,9 @@
     cartList.addEventListener("change", onCartChange);
     if (orderForm){
         orderForm.addEventListener("submit", onCreateOrder);
+        orderForm.addEventListener("input", onFormInput);
     }
+    
 
     function onAddToCart(e){
         const btn = e.currentTarget;
@@ -134,6 +138,7 @@
         cart = [];
         saveCart();
         renderCart();
+        clearFormData();
 
         e.target.reset();
     }
@@ -151,5 +156,47 @@
         } catch (err){
             cart = [];
         }
+    }
+
+    function onFormInput(){
+        const data = {
+            firstName: document.getElementById("firstName")?.value || "",
+            lastName: document.getElementById("lastName")?.value || "",
+            address: document.getElementById("address")?.value || "",
+            phone: document.getElementById("phone")?.value || "",
+        };
+        saveFormData(data);
+    }
+
+    function saveFormData(data){
+        try{
+            localStorage.setItem(FORM_KEY, JSON.stringify(data));
+        } catch (err) {}
+    }
+
+    function loadFormData(){
+        try{
+            const raw = localStorage.getItem(FORM_KEY);
+
+            if (!raw) return;
+
+            const data = JSON.parse(raw);
+            if (data && typeof data === "object"){
+                const f = document.getElementById("firstName");
+                const l = document.getElementById("lastName");
+                const a = document.getElementById("address");
+                const p = document.getElementById("phone");
+                if (f) f.value = data.firstName || "";
+                if (l) l.value = data.lastName || "";
+                if (a) a.value = data.address || "";
+                if (p) p.value = data.phone || "";
+            }
+        } catch (err) {}
+    }
+
+    function clearFormData(){
+        try {
+            localStorage.removeItem(FORM_KEY);
+        } catch (err){}
     }
 })();
