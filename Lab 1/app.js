@@ -27,7 +27,7 @@
         const btn = e.currentTarget;
         const card = btn.closest(".product-card");
         const id = btn.dataset.id || "";
-        const title = card.querySelector(".product-title")?.textContent?.trim() || "Item";
+        const title = card.querySelector(".product-tittle")?.textContent?.trim() || "Item";
         const priceText = card.querySelector(".product-price")?.textContent || "$0";
         const price = parseFloat(priceText.replace(/[^0-9.]/g, "")) || 0;
 
