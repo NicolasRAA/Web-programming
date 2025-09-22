@@ -85,6 +85,11 @@ body {
 }
 
 /* Checkout form */
+.section-sep{
+  border: 0;
+  border-top: 1px solid #757575;
+  margin: 24px 0;
+}
 .checkout { padding: 16px 0 32px; }
 .order-form { max-width: 520px; }
 .form-row { display: flex; flex-direction: column; margin-bottom: 10px; }
