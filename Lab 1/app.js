@@ -5,6 +5,7 @@
     const addButtons = document.querySelectorAll(".add-to-cart");
     const cartList = document.getElementById("cart-items");
     const carTotalEl = document.getElementById("cart-total");
+    const orderForm = document.getElementById("order-form");
 
     loadCart();
     renderCart();
@@ -14,6 +15,9 @@
     });
     cartList.addEventListener("click", onCartClick);
     cartList.addEventListener("change", onCartChange);
+    if (orderForm){
+        orderForm.addEventListener("submit", onCreateOrder);
+    }
 
     function onAddToCart(e){
         const btn = e.currentTarget;
@@ -47,7 +51,7 @@
             li.innerHTML = `
                 <div class="cart-line">
                     <span class="title">${item.title}</span>
-                    <span class="price">${item.price}</span>
+                    <span class="price">$${item.price.toFixed(2)}</span>
                 </div>
                 <div class="cart-controls">
                     <button class="qty-decrease" data-id="${item.id}" aria-label="Decrease">-</button>
@@ -113,6 +117,25 @@
         it.qty = qty < 1 ? 1 : qty;
         saveCart();
         renderCart();
+    }
+
+    function onCreateOrder(e){
+        e.preventDefault();
+
+        if (cart.length === 0){
+            alert("Your cart is empty!")
+            return;
+        }
+
+        // Тут не знаю, просят именно, чтобы появилось сообщение "Заказ создан!"
+        // но у меня уже вся страница на анлийском, так что, пусть будет так))
+        alert("Order created! | Заказ создан!")
+
+        cart = [];
+        saveCart();
+        renderCart();
+
+        e.target.reset();
     }
 
     function saveCart(){
