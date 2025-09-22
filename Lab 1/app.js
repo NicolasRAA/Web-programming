@@ -59,6 +59,12 @@
     }
 
     function renderCart(){
+        if (cart.length === 0) {
+            cartList.innerHTML = `<li class="empty">Cart is empty</li>`;
+            carTotalEl.textContent = "$0.00";
+            return;
+          }          
+          
         cartList.innerHTML = "";
         let total = 0;
 
