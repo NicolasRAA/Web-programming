@@ -1,9 +1,13 @@
 (function (){
-    const cart = [];
+    const STORAGE_KEY ="wf.cart";
+    let cart = [];
 
     const addButtons = document.querySelectorAll(".add-to-cart");
     const cartList = document.getElementById("cart-items");
     const carTotalEl = document.getElementById("cart-total");
+
+    loadCart();
+    renderCart();
 
     addButtons.forEach((btn) => {
         btn.addEventListener("click", onAddToCart);
@@ -25,6 +29,7 @@
         } else {
             cart.push({id, title, price, qty: 1});
         }
+        saveCart();
         renderCart();
     }
 
@@ -74,6 +79,7 @@
             const idx = cart.findIndex((it) => it.id === id);
             if (idx >= 0){
                 cart.splice(idx, 1);
+                saveCart();
                 renderCart();
             }
         }
@@ -95,6 +101,7 @@
 
         it.qty += delta;
         if (it.qty < 1) it.qty = 1;
+        saveCart();
         renderCart();
     }
 
@@ -104,6 +111,22 @@
         if (!it) return;
 
         it.qty = qty < 1 ? 1 : qty;
+        saveCart();
         renderCart();
+    }
+
+    function saveCart(){
+        try{
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+        } catch (err) {}
+    }
+
+    function loadCart(){
+        try{
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) cart = JSON.parse(raw) || [];
+        } catch (err){
+            cart = [];
+        }
     }
 })();
