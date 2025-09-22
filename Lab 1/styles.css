@@ -45,6 +45,7 @@ body {
 .hidden { display: none; }
 
 /* Buttons */
+/* the base class must go before the varian classes */
 .btn {
   text-decoration: none;
   display: inline-block; padding: 8px 12px; border: 1px solid #333;
