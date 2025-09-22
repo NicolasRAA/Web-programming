@@ -45,27 +45,28 @@ body {
 .hidden { display: none; }
 
 /* Buttons */
+.btn {
+  text-decoration: none;
+  display: inline-block; padding: 8px 12px; border: 1px solid #333;
+  background: #fff; cursor: pointer; border-radius: 6px;
+}
+
 .btn-primary{
-  background: rgb(124, 205, 2);
+  background: rgb(195, 253, 108);
   border-color: lightgreen;
-  color: black;
+  color: rgb(0, 0, 0);
 }
 .btn-primary:hover {background: #77e955;}
 
 .btn-secondary {
   margin: 10px auto; 
   display: block;
-  background: cadetblue;
+  background: rgb(164, 228, 230);
   border-color: lightskyblue;
-  color: #1e3a8a;
+  color: #1a2030;
 }
 .btn-secondary:hover { background: #e0e7ff;}
 
-.btn {
-  text-decoration: none;
-  display: inline-block; padding: 8px 12px; border: 1px solid #333;
-  background: #fff; cursor: pointer; border-radius: 6px;
-}
 .btn-checkout {
   display: block; text-align: center; margin-top: 10px;
   background: #4f46e5; color: #fff; border-color: #4f46e5;
