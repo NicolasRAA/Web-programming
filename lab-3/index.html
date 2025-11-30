@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>2048</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    /* Basic reset and dark tema like in other proyects */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Arial, sans-serif;
+      background: #0f1117;
+      color: #e6e7ea;
+      line-height: 1.45;
+    }
+    a { color: #8ab4ff; }
+
+    /* Layout */
+    header {
+      position: sticky; top: 0;
+      background: #0f1117;
+      border-bottom: 1px solid #232635;
+      padding: 12px 16px;
+      z-index: 5;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 16px; }
+    h1 { margin: 0; font-size: 22px; text-align: center; }
+
+    .topbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+      margin: 12px 0 8px;
+    }
+    .scoreboard { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid #2f3350;
+      background: #141824;
+      color: #c9cedf;
+      font-weight: 700;
+      min-width: 110px;
+      text-align: center;
+    }
+    .badge-score  { background:#251a42; border-color:#3d2e6a; color:#dec9ff; }
+    .badge-record { background:#0b2b34; border-color:#114b5f; color:#bff7ff; }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      height: 38px; padding: 0 12px;
+      border: 1px solid #3a3f5c;
+      background: #151a2b;
+      color: #e6e7ea;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button:hover { background: #1a2033; }
+    .btn-primary    { background: #6d5efc; border-color:#6d5efc; color:#fff; }
+    .btn-undo       { background: #f59e0b; border-color:#f59e0b; color:#1a1300; }
+    .btn-leader     { background: #0ea5b7; border-color:#0ea5b7; color:#001316; }
+
+    /* Game area */
+    .game-wrap { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+
+    .board-wrap {
+      position: relative;
+      width: min(92vw, 520px);
+      aspect-ratio: 1 / 1;
+      background: #141824;
+      border: 1px solid #232635;
+      border-radius: 14px;
+      padding: 12px;
+      margin: 0 auto;
+      box-shadow: 0 0 0 2px #1b1f2d inset;
+    }
+
+    /* Grid background cells (JS) */
+    .grid {
+      position: absolute; inset: 12px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 12px;
+      z-index: 1;
+    }
+    .cell {
+      background: #0f1426;
+      border: 1px solid #232635;
+      border-radius: 12px;
+    }
+
+    /* Tiles layer ~absolute */
+    .tiles { position: absolute; inset: 12px; z-index: 2; }
+    .tile {
+      position: absolute;
+      width: calc((100% - 12px * 3) / 4);
+      height: calc((100% - 12px * 3) / 4);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800;
+      font-size: clamp(18px, 6vw, 28px);
+      transition: top 140ms ease, left 140ms ease, transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+      user-select: none;
+      box-shadow: 0 2px 0 rgba(255,255,255,0.04) inset;
+    }
+    .tile.spawn { transform: scale(0.7); }
+    .tile.spawn.show { transform: scale(1); }
+    .tile.merge { transform: scale(1.12); box-shadow: 0 0 0 3px rgba(255,255,255,0.06) inset; }
+
+    /* Tilescolors */
+    .v2   { background:#203a8a; color:#e8f1ff; }
+    .v4   { background:#145a8a; color:#e6fbff; }
+    .v8   { background:#5a2a8a; color:#ffe6ff; }
+    .v16  { background:#8a2a6b; color:#ffe1f5; }
+    .v32  { background:#a82a4a; color:#ffe1e8; }
+    .v64  { background:#c43a38; color:#ffe8e6; }
+    .v128 { background:#d47a1c; color:#fff1dd; }
+    .v256 { background:#d6a21a; color:#fff9dd; }
+    .v512 { background:#5ca51f; color:#edffe1; }
+    .v1024{ background:#20a385; color:#e1fffa; }
+    .v2048{ background:#6d5efc; color:#ffffff; }
+
+    /* Mobile controls */
+    .mobile-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(2, 64px);
+      gap: 8px;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .mobile-controls button { width: 64px; height: 64px; border-radius: 12px; }
+    .mobile-up   { grid-column: 2; grid-row: 1; }
+    .mobile-left { grid-column: 1; grid-row: 2; }
+    .mobile-down { grid-column: 2; grid-row: 2; }
+    .mobile-right{ grid-column: 3; grid-row: 2; }
+
+    .hint {
+      text-align: center;
+      color: #aeb3c7;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Overlays (modal dialogs)*/
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 16px;
+      z-index: 10;
+    }
+    .overlay.show { display: flex; }
+    .modal {
+      width: min(92vw, 460px);
+      background: #141824;
+      border: 1px solid #232635;
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .modal h2 { margin: 0 0 8px; font-size: 20px; }
+    .modal p { margin: 6px 0 12px; color: #cbd0e2; }
+    .modal .row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+    .modal input[type=text] {
+      flex: 1 1 180px;
+      height: 38px; padding: 0 10px;
+      border: 1px solid #3a3f5c; background:#0f1320; color:#e6e7ea;
+      border-radius: 8px;
+    }
+
+    /* Rekordi */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px; border-bottom: 1px solid #232635; text-align: left; }
+    th { color: #aeb3c7; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>2048</h1>
+  </header>
+
+  <main class="container">
+    <div class="topbar">
+      <div class="scoreboard">
+        <div class="badge badge-score"  id="scoreBadge">Score: 0</div>
+        <div class="badge badge-record" id="recordBadge">Record: 0</div>
+      </div>
+      <div class="controls">
+        <button id="btnUndo" class="btn-undo" title="Undo last move">Undo</button>
+        <button id="btnRestart" class="btn-primary" title="Restart game">Restart</button>
+        <button id="btnToggleLeaderboard" class="btn-leader" title="Show leaderboard">Leaderboard</button>
+      </div>
+    </div>
+
+    <div class="game-wrap">
+      <!-- Board wrapper in which cells and tiles layers will be created with JS -->
+      <div class="board-wrap">
+        <div id="gridLayer" class="grid"></div>
+        <div id="tilesLayer" class="tiles"></div>
+      </div>
+
+      <!-- Mobile controls, they shown while playing -->
+      <div id="mobileControls" class="mobile-controls">
+        <button class="mobile-up"    id="btnUp"    aria-label="Move up">↑</button>
+        <button class="mobile-left"  id="btnLeft"  aria-label="Move left">←</button>
+        <button class="mobile-down"  id="btnDown"  aria-label="Move down">↓</button>
+        <button class="mobile-right" id="btnRight" aria-label="Move right">→</button>
+      </div>
+      <p id="keyboardHint" class="hint hidden">You can also use keyboard arrows to move tiles.</p>
+    </div>
+  </main>
+
+  <!-- Game Over + Save record modal -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2 id="modalTitle">Game Over</h2>
+      <p id="modalMsg">Enter your name to save your record.</p>
+      <div id="saveRow" class="row">
+        <input id="nameInput" type="text" placeholder="Your name">
+        <button id="btnSaveScore" class="btn-primary">Save record</button>
+      </div>
+      <div class="row">
+        <button id="btnModalRestart">Restart</button>
+        <button id="btnCloseModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard modal -->
+  <div id="leaderOverlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2 style="margin:0 0 6px;">Top 10 — Leaderboard</h2>
+      <p style="margin:0 0 10px;color:#cbd0e2;">Highest scores (name, score, date).</p>
+      <table aria-describedby="Leaderboard table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Score</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+      <div class="row" style="justify-content:flex-end; margin-top:12px;">
+        <button id="btnCloseLeader">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
