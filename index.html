@@ -22,20 +22,20 @@
         h2{margin:18px 0 10px}
         p.lead{color:#bfc6d4; margin:8px 0 18px}
 
+        /* Grid 2×2 en escritorio (simétrico para 4 tarjetas) */
         .grid{
-          display:grid;
-          grid-template-columns:repeat(4,1fr);
-          gap:14px;
-          margin-top:12px;
+            display:grid;
+            grid-template-columns:repeat(2, minmax(300px, 1fr));
+            gap:14px;
+            margin-top:12px;
         }
-        @media(max-width:1200px){ .grid{ grid-template-columns:repeat(3,1fr); } }
-        @media(max-width:900px){  .grid{ grid-template-columns:repeat(2,1fr); } }
-        @media(max-width:600px){  .grid{ grid-template-columns:1fr; } }
+        @media(max-width:900px){ .grid{ grid-template-columns:repeat(2, 1fr); } }
+        @media(max-width:600px){ .grid{ grid-template-columns:1fr; } }
 
         .card{
             position:relative;
             background:#151923; border:1px solid #2a2f3a; border-radius:12px;
-            padding:14px; display:flex; flex-direction:column;
+            padding:14px; display:flex; flex-direction:column; height:100%;
             box-shadow:0 1px 0 rgba(255,255,255,0.02) inset;
         }
         .card-head{
@@ -54,6 +54,8 @@
             display:inline-block; text-decoration:none; text-align:center;
             padding:10px 12px; border-radius:8px; cursor:pointer;
             border:1px solid #475569; background:#0f172a; color:#e7e7e7;
+            /* empuja el botón al fondo de la tarjeta */
+            margin-top:auto;
         }
         .btn:hover{background:#111c3a}
         .btn-primary{
@@ -119,7 +121,6 @@
                         <li>DnD + мини-хэндлер для использование в телефоне;</li>
                         <li><code>localStorage</code>, дата по умолчанию — сегодня, индикатор дней (цвета).</li>
                     </ul>
-                    <br> <br>
                     <a class="btn btn-primary" href="lab-2/">Открыть ЛР2</a>
                 </article>
 
@@ -130,7 +131,7 @@
                         <span class="tag">JS (DOM API) / CSS / localStorage</span>
                     </div>
                     <p>Игра 2048 с Undo, лидербордом (Top-10) и сохранением сессии.</p>
-                    <p>Основные пункты:</p>
+                    <br><p>Основные пункты:</p>
                     <ul>
                         <li>Поле 4×4 и тайлы создаются через DOM API; без <code>innerHTML</code>/<code>outerHTML</code>;</li>
                         <li>Движение/слияние во все стороны, очки за ход; 1~2 новых тайла 2/4;</li>
