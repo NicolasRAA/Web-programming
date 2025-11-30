@@ -27,4 +27,12 @@
   - **Страница:** https://nicolasraa.github.io/Web-programming/lab-2/ 
 
 
+
+- **ЛР3 — 2048** *(JS (DOM API) / CSS / localStorage)*
+
+  > **Кратко:** Игра 2048 с Undo, лидербордом (Top-10) и сохранением сессии
+  - **Репозиторий:** https://github.com/NicolasRAA/Web-programming/tree/main/lab-3  
+  - **Страница:** https://nicolasraa.github.io/Web-programming/lab-3/
+
+
 *(Следующие работы будут добавлены по мере выполнения)*
