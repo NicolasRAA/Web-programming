@@ -1,7 +1,7 @@
 # ЛР3 — 2048
 
 > [!IMPORTANT]
-> Работа выполнена **на чистом JavaScript (DOM API)**, без фреймворков и без `innerHTML`/`outerHTML`;
+> Работа выполнена **на чистом JavaScript (DOM API)**, без фреймворков и без `innerHTML`/`outerHTML`;   
 > **Ячейки поля 4×4 и все тайлы создаются динамически** через JS (`createElement`, `appendChild`, `textContent`, `className`);
 
 
@@ -35,7 +35,7 @@
   - Desktop — управление стрелками.  
   - Mobile — виртуальные кнопки или swipes.
 > [!WARNING]
-> Запрет на фреймворки; допускается SCSS.
+> Запрет на фреймворки; допускается SCSS.   
 > Запрет на `innerHTML`/`outerHTML`.
 
 ---
