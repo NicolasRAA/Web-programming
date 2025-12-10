@@ -5,7 +5,6 @@
   <title>Прогноз погоды</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Base styles, potom'll change -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,15 +13,87 @@
       <h1>Прогноз погоды</h1>
     </header>
 
-    <main id="app-root">
-      <!-- Later UI render with JS -->
-      <p class="app-placeholder">
-        Интерфейс приложения будет добавлен на следующих шагах разработки.
-      </p>
+    <main id="app-root" class="app-main">
+      <!-- Top toolbar: current location + refresh -->
+      <section class="toolbar card">
+        <div class="toolbar-left">
+          <span class="location-label">Текущее местоположение</span>
+          <span class="location-note" id="location-note">
+            Геолокация будет запрошена при первом открытии приложения.
+          </span>
+        </div>
+        <button type="button" class="btn btn-primary" id="refresh-btn">
+          Обновить
+        </button>
+      </section>
+
+      <!-- Two-column layout: left = cities & form, right = forecast -->
+      <section class="columns">
+        <!-- Left column: city management -->
+        <section class="column card column-left">
+          <h2 class="section-title">Города</h2>
+          <p class="section-help">
+            Можно использовать текущее местоположение и добавить несколько городов
+            для быстрого доступа.
+          </p>
+
+          <form id="city-form" class="city-form" autocomplete="off">
+            <label class="field-label" for="city-input">Добавить город</label>
+
+            <div class="field-with-dropdown">
+              <input
+                id="city-input"
+                name="city"
+                class="text-input"
+                type="text"
+                placeholder="Начните вводить название города"
+              >
+              <!-- will fill wiht JS -->
+              <ul id="city-suggestions" class="suggestions-list">
+              </ul>
+            </div>
+
+            <p id="city-error" class="field-error" aria-live="polite"></p>
+
+            <button type="submit" class="btn btn-secondary">
+              Добавить
+            </button>
+          </form>
+
+          <h3 class="subsection-title">Список городов</h3>
+          <ul id="city-list" class="city-list">
+            <li class="city-list-empty">
+              Пока пусто. После настройки геолокации или добавления города
+              они появятся в этом списке
+            </li>
+          </ul>
+        </section>
+
+        <!-- Right column: forecast display -->
+        <section class="column card column-right">
+          <h2 class="section-title">Прогноз погоды</h2>
+
+          <div id="status-panel" class="status-panel">
+            <p class="status-message status-message--info">
+              Выберите город или используйте текущее местоположение, чтобы увидеть прогноз.
+            </p>
+          </div>
+
+          <div id="forecast-container" class="forecast-container">
+            <!-- Will add rpognos: today + 2 days -->
+          </div>
+        </section>
+      </section>
     </main>
   </div>
 
-  <!-- City catalog (filled later) -->
+  <footer>
+    &copy; Арройо Николас — 2025.
+    Репозиторий:
+    <a href="https://github.com/NicolasRAA/Web-programming">Web-programming</a>
+  </footer>
+
+  <!-- City catalog (empty for now) -->
   <script src="cities.js" defer></script>
   <!-- Main app script -->
   <script src="app.js" defer></script>

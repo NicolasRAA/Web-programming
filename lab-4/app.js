@@ -1,10 +1,10 @@
 (function () {
     "use strict";
   
-    // Poka:
-    // - basic appState container
-    // - entry point that waits for DOMContentLoaded
-    // Real logic Iñll add later
+    // So far:
+    // - defining simple appState object
+    // - waiting for DOMContentLoaded
+    // - caching main root element
   
     var appState = {
       mainLocation: null,
@@ -17,8 +17,7 @@
   
     /**
      * Entry point for app
-     * caching root element
-     * rendering simple placeholder
+     * Not modifying innerHTML – layout is written in HTML
      */
     function start() {
       appRoot = document.getElementById("app-root");
@@ -28,22 +27,8 @@
         return;
       }
   
-      // Later replace with real weather UI
-      renderPlaceholder();
-    }
-  
-    /**
-     * to see something on the page
-     */
-    function renderPlaceholder() {
-      appRoot.innerHTML = "";
-  
-      var p = document.createElement("p");
-      p.className = "app-placeholder";
-      p.textContent =
-        "Здесь будет интерфейс приложения прогноза погоды. " +
-        "Следующие коммиты добавят разметку, логику и работу с API.";
-      appRoot.appendChild(p);
+      // logging that the app is alive
+      console.log("[lab-4] Weather app initialized (layout-only step).");
     }
   
     // Bootstrapping: waiting for DOM to be ready, then starting app

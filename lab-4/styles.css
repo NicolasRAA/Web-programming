@@ -1,3 +1,5 @@
+/* base layout + cards + responsive columns */
+
 *,
 *::before,
 *::after {
@@ -17,6 +19,7 @@ body {
   color: #e5e7eb;
 }
 
+/* App wrapper */
 .app {
   min-height: 100vh;
   max-width: 960px;
@@ -24,18 +27,297 @@ body {
   padding: 16px;
 }
 
+/* Header */
 .app-header h1 {
-  margin: 0 0 4px;
-  font-size: 1.6rem;
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: 0.03em;
 }
 
-.app-subtitle {
-  margin: 0 0 16px;
+.app-main {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Generic card */
+.card {
+  background: #151923;
+  border-radius: 12px;
+  border: 1px solid #252b3a;
+  padding: 14px 16px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toolbar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.location-label {
+  font-weight: 600;
+}
+
+.location-note {
+  font-size: 0.85rem;
   color: #9ca3af;
+}
+
+/* Columns layout */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.9fr);
+  gap: 16px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-title {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.subsection-title {
+  margin: 8px 0 4px;
+  font-size: 0.95rem;
+  color: #e5e7eb;
+}
+
+.section-help {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  color: #9ca3af;
+}
+
+/* Form */
+.city-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  color: #e5e7eb;
+}
+
+.field-with-dropdown {
+  position: relative;
+}
+
+.text-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.95rem;
+}
+
+.text-input::placeholder {
+  color: #6b7280;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4);
+}
+
+/* Suggestions dropdown (will fill wiht JS) */
+.suggestions-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  z-index: 10;
+  display: none; /* po umolchaniyu hidden; will show with JS */
+}
+
+.suggestions-list li {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.suggestions-list li:hover {
+  background: #111827;
+}
+
+/* Error message under input */
+.field-error {
+  min-height: 18px;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #f97373;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease, border-color 0.15s ease;
+}
+
+.btn:hover {
+  background: #111827;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: #3b82f6;
+  border-color: #2563eb;
+  color: #f9fafb;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+.btn-secondary {
+  align-self: flex-start;
+}
+
+/* City list */
+.city-list {
+  margin: 0;
+  padding: 8px 0 0;
+  list-style: none;
+  border-top: 1px solid #272b36;
+}
+
+.city-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
   font-size: 0.9rem;
 }
 
-.app-placeholder {
-  margin-top: 32px;
+.city-list-item button {
+  font-size: 0.8rem;
+}
+
+.city-name {
+  font-weight: 500;
+}
+
+.city-tag {
+  font-size: 0.78rem;
   color: #9ca3af;
+}
+
+.city-list-empty {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+/* Status + forecast */
+.status-panel {
+  margin-bottom: 10px;
+}
+
+.status-message {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.status-message--info {
+  color: #9ca3af;
+}
+
+.status-message--error {
+  color: #f97373;
+}
+
+.status-message--success {
+  color: #4ade80;
+}
+
+.forecast-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+/* Placeholder for forecast cards ('ll fill later) */
+.forecast-card {
+  background: #020617;
+  border-radius: 10px;
+  border: 1px solid #1f2933;
+  padding: 10px;
+}
+
+/* Footer */
+footer {
+  border-top: 1px solid #252b3a;
+  background: #111827;
+  padding: 10px 16px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+footer a {
+  color: #93c5fd;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-primary {
+    align-self: stretch;
+    justify-content: center;
+    width: 100%;
+  }
 }
