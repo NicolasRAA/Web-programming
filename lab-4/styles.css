@@ -158,6 +158,10 @@ body {
   display: none; /* po umolchaniyu hidden; will show with JS */
 }
 
+.suggestions-list.suggestions-list--open {
+  display: block;
+}
+
 .suggestions-list li {
   padding: 6px 10px;
   cursor: pointer;
@@ -246,6 +250,21 @@ body {
   margin: 6px 0 0;
   font-size: 0.85rem;
   color: #9ca3af;
+}
+
+.city-list-item--active {
+  background: #020617;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.city-list-item--active .city-name {
+  color: #93c5fd;
+}
+
+.city-list-item-buttons {
+  display: flex;
+  gap: 6px;
 }
 
 /* Status + forecast */
