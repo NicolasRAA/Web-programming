@@ -10,6 +10,8 @@
   // - wiring Refresh button (no HTTPcalls yet)
   // - basic city form wiring + suggestions dropdown (no HTTP yet)
   // - rendering city list (main location + extra cities)
+  // - basic weather HTTP request (open-meteo) for current selection
+  // - rendering simple 3-day forecast cards (today + 2 days)
 
   var appState = {
     mainLocation: null,
@@ -20,7 +22,10 @@
     geoStatus: "idle",
     // which location is currently selected for forecast
     // { kind: "geo" } or { kind: "city", cityId: string }
-    currentSelection: null
+    currentSelection: null,
+    // basic http state flags
+    isLoading: false,
+    lastError: null
   };
 
   // DOM cache (filled in start())
@@ -28,6 +33,7 @@
   var locationNoteEl = null;
   var statusPanelEl = null;
   var refreshBtn = null;
+  var forecastContainerEl = null;
 
   // City-related DOM (filled in start())
   var cityFormEl = null;
@@ -42,6 +48,9 @@
 
   var EMPTY_CITY_LIST_TEXT =
     "Пока пусто. После настройки геолокации или добавления города они появятся в этом списке";
+
+  // Simple config for open-meteo API
+  var WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast";
 
   /**
    * Helper update status panel with single message
@@ -563,13 +572,222 @@
   }
 
   /**
+   * Small helper: clearing forecast container before rendering new cards
+   */
+  function clearForecast() {
+    if (!forecastContainerEl) return;
+    while (forecastContainerEl.firstChild) {
+      forecastContainerEl.removeChild(forecastContainerEl.firstChild);
+    }
+  }
+
+  /**
+   * Helper: building open-meteo URL for given coordinates
+   * Requesting daily max/min temp and weather code for 3 days
+   */
+  function buildForecastUrl(lat, lon) {
+    var params = [
+      "latitude=" + encodeURIComponent(lat),
+      "longitude=" + encodeURIComponent(lon),
+      "daily=temperature_2m_max,temperature_2m_min,weathercode",
+      "timezone=auto",
+      "forecast_days=3"
+    ];
+    return WEATHER_API_BASE + "?" + params.join("&");
+  }
+
+  /**
+   * Helper: describing open-meteo weather code in simple text po russki
+   */
+  function describeWeatherCode(code) {
+    if (code === 0) return "Ясно";
+    if (code === 1 || code === 2 || code === 3) return "Переменная облачность";
+    if (code === 45 || code === 48) return "Туман / иней";
+    if (code === 51 || code === 53 || code === 55) return "Морось";
+    if (code === 61 || code === 63 || code === 65) return "Дождь";
+    if (code === 66 || code === 67) return "Ледяной дождь";
+    if (code === 71 || code === 73 || code === 75) return "Снегопад";
+    if (code === 77) return "Снежные зерна";
+    if (code === 80 || code === 81 || code === 82) return "Ливневый дождь";
+    if (code === 95) return "Гроза";
+    if (code === 96 || code === 99) return "Гроза с градом";
+    return "Погода: код " + code;
+  }
+
+  /**
+   * Helper: displaying title for day index (0..2) with small hint
+   */
+  function formatDayTitle(dateStr, index) {
+    if (index === 0) return "Сегодня (" + dateStr + ")";
+    if (index === 1) return "Завтра (" + dateStr + ")";
+    if (index === 2) return "Послезавтра (" + dateStr + ")";
+    return dateStr;
+  }
+
+  /**
+   * Render simple 3-day forecast cards from open-meteo response
+   */
+  function renderForecastFromResponse(data) {
+    if (!forecastContainerEl) return;
+
+    clearForecast();
+
+    if (
+      !data ||
+      !data.daily ||
+      !data.daily.time ||
+      !data.daily.temperature_2m_max ||
+      !data.daily.temperature_2m_min
+    ) {
+      setStatusMessage(
+        "Не удалось разобрать ответ сервера погоды.",
+        "error"
+      );
+      return;
+    }
+
+    var times = data.daily.time;
+    var tMax = data.daily.temperature_2m_max;
+    var tMin = data.daily.temperature_2m_min;
+    var codes = data.daily.weathercode || [];
+
+    var totalDays = times.length;
+    var limit = totalDays < 3 ? totalDays : 3; // at least today + 2 if available
+
+    for (var i = 0; i < limit; i++) {
+      var card = document.createElement("article");
+      card.className = "forecast-card";
+
+      var titleEl = document.createElement("h3");
+      titleEl.className = "forecast-day-title";
+      titleEl.textContent = formatDayTitle(times[i], i);
+
+      var tempEl = document.createElement("p");
+      tempEl.className = "forecast-temp";
+      tempEl.textContent =
+        "от " +
+        Math.round(tMin[i]) +
+        "°C до " +
+        Math.round(tMax[i]) +
+        "°C";
+
+      var descEl = document.createElement("p");
+      descEl.className = "forecast-desc";
+      var code = typeof codes[i] === "number" ? codes[i] : null;
+      if (code !== null) {
+        descEl.textContent = describeWeatherCode(code);
+      } else {
+        descEl.textContent = "Описание погоды недоступно.";
+      }
+
+      card.appendChild(titleEl);
+      card.appendChild(tempEl);
+      card.appendChild(descEl);
+
+      forecastContainerEl.appendChild(card);
+    }
+  }
+
+  /**
+   * Helper: geting coordinates object { lat, lon } for current selection
+   * For geo -> taking from appState.mainLocation.coords
+   * For city -> takign from cityCatalog (where lat/lon)
+   */
+  function getCoordsForSelection(selection) {
+    if (!selection) return null;
+
+    if (selection.kind === "geo") {
+      if (
+        appState.mainLocation &&
+        appState.mainLocation.type === "geo" &&
+        appState.mainLocation.coords
+      ) {
+        return {
+          lat: appState.mainLocation.coords.lat,
+          lon: appState.mainLocation.coords.lon
+        };
+      }
+      return null;
+    }
+
+    if (selection.kind === "city") {
+      if (!cityCatalog || !cityCatalog.findById) return null;
+      var city = cityCatalog.findById(selection.cityId);
+      if (!city) return null;
+      if (typeof city.lat !== "number" || typeof city.lon !== "number") {
+        return null;
+      }
+      return { lat: city.lat, lon: city.lon };
+    }
+
+    return null;
+  }
+
+  /**
+   * Performing HTTP request to open-meteo for current selection
+   * and rendering forecast cards
+   */
+  function fetchForecastForSelection() {
+    if (!appState.currentSelection) {
+      setStatusMessage(
+        "Сначала выберите город или текущее местоположение, затем обновите прогноз.",
+        "info"
+      );
+      return;
+    }
+
+    var coords = getCoordsForSelection(appState.currentSelection);
+    if (!coords) {
+      setStatusMessage(
+        "Не удалось определить координаты для выбранного города.",
+        "error"
+      );
+      return;
+    }
+
+    var url = buildForecastUrl(coords.lat, coords.lon);
+
+    appState.isLoading = true;
+    appState.lastError = null;
+    clearForecast();
+
+    // Showing simple loading state through status panel
+    setStatusMessage("Загружаем прогноз погоды...", "info");
+
+    fetch(url)
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("HTTP error " + response.status);
+        }
+        return response.json();
+      })
+      .then(function (data) {
+        appState.isLoading = false;
+        appState.weatherData = data;
+
+        setStatusMessage("Прогноз обновлён.", "success");
+        renderForecastFromResponse(data);
+      })
+      .catch(function (error) {
+        appState.isLoading = false;
+        appState.lastError = String(error);
+        setStatusMessage(
+          "Ошибка при загрузке прогноза. Попробуйте ещё раз позже.",
+          "error"
+        );
+        console.error("Weather API error:", error);
+      });
+  }
+
+  /**
    * Click handler for update button
    * Logs action and checks that some location is selected
    * Pozhe will trigger HTTP weather requests for current selection
    */
   function handleRefreshClick() {
     console.log(
-      "Refresh click. Weather API calls will be wired here in next commits."
+      "Refresh click. Will request weather for selection:",
+      appState.currentSelection
     );
 
     if (!appState.currentSelection) {
@@ -577,12 +795,19 @@
         "Сначала выберите город или текущее местоположение, затем обновите прогноз.",
         "info"
       );
-    } else {
+      return;
+    }
+
+    if (appState.isLoading) {
+      // Basic guard against parallel requests
       setStatusMessage(
-        "Здесь позже будет запрос к API погоды для выбранного города (в одном из следующих коммитов).",
+        "Запрос уже выполняется, подождите завершения.",
         "info"
       );
+      return;
     }
+
+    fetchForecastForSelection();
   }
 
   /**
@@ -704,6 +929,7 @@
     locationNoteEl = document.getElementById("location-note");
     statusPanelEl = document.getElementById("status-panel");
     refreshBtn = document.getElementById("refresh-btn");
+    forecastContainerEl = document.getElementById("forecast-container");
 
     cityFormEl = document.getElementById("city-form");
     cityInputEl = document.getElementById("city-input");
@@ -734,6 +960,10 @@
       refreshBtn.addEventListener("click", handleRefreshClick);
     }
 
+    if (!forecastContainerEl) {
+      console.error("#forecast-container not found in DOM");
+    }
+
     if (!cityFormEl) {
       console.error("#city-form not found in DOM");
     } else {
@@ -749,7 +979,7 @@
 
     // logging that the app is alive
     console.log(
-      "Weather app initialized (layout + geolocation + city form step)."
+      "Weather app initialized (layout + geolocation + city form + basic forecast)."
     );
 
     // initial render of city list (will show "empty" placeholder)

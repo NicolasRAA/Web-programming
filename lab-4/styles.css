@@ -303,6 +303,24 @@ body {
   padding: 10px;
 }
 
+/* Forecast card content */
+.forecast-day-title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+
+.forecast-temp {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.forecast-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
 /* Footer */
 footer {
   border-top: 1px solid #252b3a;

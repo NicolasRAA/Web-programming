@@ -2,17 +2,17 @@
     "use strict";
   
     var CITY_CATALOG = [
-      { id: "moscow", name: "Москва", country: "Россия" },
-      { id: "spb", name: "Санкт-Петербург", country: "Россия" },
-      { id: "novosibirsk", name: "Новосибирск", country: "Россия" },
-      { id: "yekaterinburg", name: "Екатеринбург", country: "Россия" },
-      { id: "kazan", name: "Казань", country: "Россия" },
-      { id: "sochi", name: "Сочи", country: "Россия" },
+      { id: "moscow",       name: "Москва",           country: "Россия",         lat: 55.7558, lon: 37.6176 },
+      { id: "spb",          name: "Санкт-Петербург",  country: "Россия",         lat: 59.9375, lon: 30.3086 },
+      { id: "novosibirsk",  name: "Новосибирск",      country: "Россия",         lat: 55.0084, lon: 82.9357 },
+      { id: "yekaterinburg",name: "Екатеринбург",     country: "Россия",         lat: 56.8389, lon: 60.6057 },
+      { id: "kazan",        name: "Казань",           country: "Россия",         lat: 55.7903, lon: 49.1125 },
+      { id: "sochi",        name: "Сочи",             country: "Россия",         lat: 43.5855, lon: 39.7231 },
   
-      { id: "london", name: "Лондон", country: "Великобритания" },
-      { id: "paris", name: "Париж", country: "Франция" },
-      { id: "berlin", name: "Берлин", country: "Германия" },
-      { id: "helsinki", name: "Хельсинки", country: "Финляндия" }
+      { id: "london",       name: "Лондон",           country: "Великобритания", lat: 51.5074, lon: -0.1278 },
+      { id: "paris",        name: "Париж",            country: "Франция",        lat: 48.8566, lon: 2.3522 },
+      { id: "berlin",       name: "Берлин",           country: "Германия",       lat: 52.5200, lon: 13.4050 },
+      { id: "helsinki",     name: "Хельсинки",        country: "Финляндия",      lat: 60.1699, lon: 24.9384 }
     ];
   
     /**
