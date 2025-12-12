@@ -12,6 +12,7 @@
   // - rendering city list (main location + extra cities)
   // - basic weather HTTP request (open-meteo) for current selection
   // - rendering simple 3-day forecast cards (today + 2 days)
+  // - persisting locations & selection in localStorage (no weather cache)
 
   var appState = {
     mainLocation: null,
@@ -51,6 +52,9 @@
 
   // Simple config for open-meteo API
   var WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast";
+
+  // LocalStorage key for persisting minimal app state (locations + selection)
+  var STORAGE_KEY = "lab4_weather_app_state";
 
   /**
    * Helper update status panel with single message
@@ -257,6 +261,9 @@
     if (msg) {
       setStatusMessage(msg, "info");
     }
+
+    // Saving new selection to localStorage
+    saveStateToStorage();
   }
 
   /**
@@ -297,6 +304,9 @@
 
     renderCityList();
     setStatusMessage("Город удалён из списка.", "info");
+
+    // Persist updated city list + selection
+    saveStateToStorage();
   }
 
   /**
@@ -487,6 +497,9 @@
         "Геолокация недоступна в этом браузере. Введите город вручную.",
         "error"
       );
+
+      // Persist that geolocation is unsupported
+      saveStateToStorage();
       return;
     }
 
@@ -536,6 +549,9 @@
 
     renderCityList();
 
+    // Save successful geo state + selection
+    saveStateToStorage();
+
     console.log("Geolocation coords:", appState.mainLocation.coords);
   }
 
@@ -567,6 +583,9 @@
     }
 
     setStatusMessage(msg, "error");
+
+    // Save denied geo state so we don't annoy user on reload
+    saveStateToStorage();
 
     console.warn("Geolocation error:", error);
   }
@@ -622,6 +641,78 @@
     if (index === 1) return "Завтра (" + dateStr + ")";
     if (index === 2) return "Послезавтра (" + dateStr + ")";
     return dateStr;
+  }
+
+  /**
+   * Helper: building minimal snapshot object for saving into localStorage
+   */
+  function buildStateSnapshot() {
+    return {
+      mainLocation: appState.mainLocation,
+      extraCities: appState.extraCities,
+      currentSelection: appState.currentSelection,
+      geoStatus: appState.geoStatus
+    };
+  }
+
+  /**
+   * Helper: saving app state (locations + selection) into localStorage
+   */
+  function saveStateToStorage() {
+    if (!window.localStorage) return;
+    try {
+      var snapshot = buildStateSnapshot();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+    } catch (e) {
+      console.warn("Failed to save app state to localStorage:", e);
+    }
+  }
+
+  /**
+   * Helper: restoring app state from localStorage on app start
+   * Returns true if something was restored
+   */
+  function restoreStateFromStorage() {
+    if (!window.localStorage) return false;
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return false;
+
+      if (parsed.mainLocation && typeof parsed.mainLocation === "object") {
+        appState.mainLocation = parsed.mainLocation;
+      } else {
+        appState.mainLocation = null;
+      }
+
+      if (Array.isArray(parsed.extraCities)) {
+        appState.extraCities = parsed.extraCities;
+      } else {
+        appState.extraCities = [];
+      }
+
+      if (
+        parsed.currentSelection &&
+        typeof parsed.currentSelection === "object"
+      ) {
+        appState.currentSelection = parsed.currentSelection;
+      } else {
+        appState.currentSelection = null;
+      }
+
+      if (typeof parsed.geoStatus === "string") {
+        appState.geoStatus = parsed.geoStatus;
+      } else {
+        appState.geoStatus = "idle";
+      }
+
+      return true;
+    } catch (e) {
+      console.warn("Failed to restore app state from localStorage:", e);
+      return false;
+    }
   }
 
   /**
@@ -911,6 +1002,9 @@
         '" добавлен. Нажмите «Обновить», чтобы получить прогноз.',
       "success"
     );
+
+    // Persist updated locations + selection
+    saveStateToStorage();
   }
 
   /**
@@ -979,14 +1073,42 @@
 
     // logging that the app is alive
     console.log(
-      "Weather app initialized (layout + geolocation + city form + basic forecast)."
+      "Weather app initialized (layout + geolocation + city form + basic forecast + localStorage)."
     );
 
-    // initial render of city list (will show "empty" placeholder)
-    renderCityList();
+    // Trying to restore previous state from localStorage (cities + selection)
+    var restored = restoreStateFromStorage();
 
-    // Start geolocation flow on first load
-    initGeolocation();
+    if (restored) {
+      // Rendering list according to restored state
+      renderCityList();
+
+      if (appState.currentSelection) {
+        setStatusMessage(
+          "Состояние восстановлено. Нажмите «Обновить», чтобы заново загрузить прогноз.",
+          "info"
+        );
+      } else {
+        setStatusMessage(
+          "Состояние восстановлено. Выберите город или текущее местоположение для прогноза.",
+          "info"
+        );
+      }
+
+      // If not saved mainLocation and geo not explicitly denied/unsupported, trying geolocation once more
+      if (
+        !appState.mainLocation &&
+        appState.geoStatus === "idle"
+      ) {
+        initGeolocation();
+      }
+    } else {
+      // initial render of city list ("empty" placeholder)
+      renderCityList();
+
+      // Start geolocation flow on first load (no saved state yet)
+      initGeolocation();
+    }
   }
 
   // Bootstrapping: waiting for DOM to be ready, then starting app

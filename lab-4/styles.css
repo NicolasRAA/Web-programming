@@ -301,18 +301,21 @@ body {
   border-radius: 10px;
   border: 1px solid #1f2933;
   padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Forecast card content */
+/* Forecast card typography */
 .forecast-day-title {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .forecast-temp {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 0.9rem;
-  font-weight: 500;
 }
 
 .forecast-desc {
