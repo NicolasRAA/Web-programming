@@ -901,111 +901,108 @@
     fetchForecastForSelection();
   }
 
-  /**
+    /**
    * Submit handler for city form
    * Validating city name and adds it to state (as main or extra)
    */
-  function handleCityFormSubmit(evt) {
-    evt.preventDefault();
-    if (!cityInputEl || !cityCatalog) return;
-
-    var raw = cityInputEl.value;
-    var name = raw ? raw.trim() : "";
-
-    if (!name) {
-      setCityError("Введите название города.");
-      hideSuggestions();
-      return;
-    }
-
-    // Try to resolve city:
-    // by explicit data-city-id set from suggestions
-    // or by exact name (case-insensitive) in catalog
-    var selectedId = cityInputEl.getAttribute("data-city-id");
-    var city = null;
-
-    if (selectedId) {
-      city = cityCatalog.findById(selectedId);
-    }
-    if (!city) {
-      city = cityCatalog.findByName(name);
-    }
-
-    if (!city) {
-      setCityError(
-        "Город не найден. Выберите город из списка подсказок."
-      );
-      hideSuggestions();
-      return;
-    }
-
-    // Duplicate check: already main city?
-    if (
-      appState.mainLocation &&
-      appState.mainLocation.type === "city" &&
-      appState.mainLocation.cityId === city.id
-    ) {
-      setCityError("Этот город уже выбран как основной.");
-      hideSuggestions();
-      return;
-    }
-
-    // Duplicate check: already extra city?
-    var existsInExtra = appState.extraCities.some(function (c) {
-      return c.id === city.id;
-    });
-    if (existsInExtra) {
-      setCityError("Этот город уже есть в списке.");
-      hideSuggestions();
-      return;
-    }
-
-    // If there no mainLocation yet (or geolocation denied/unsupported)
-    // -> treat this city as "main" location
-    if (
-      !appState.mainLocation ||
-      appState.geoStatus === "denied" ||
-      appState.geoStatus === "unsupported"
-    ) {
-      appState.mainLocation = {
-        type: "city",
-        cityId: city.id,
-        name: city.name,
-        country: city.country
-      };
-      appState.currentSelection = { kind: "city", cityId: city.id };
-    } else {
-      // Otherwise add to extraCities
-      appState.extraCities.push({
-        id: city.id,
-        name: city.name,
-        country: city.country
-      });
-
-      // If there is no current selection yet, set it
-      if (!appState.currentSelection) {
-        appState.currentSelection = { kind: "city", cityId: city.id };
+    function handleCityFormSubmit(evt) {
+      evt.preventDefault();
+      if (!cityInputEl || !cityCatalog) return;
+  
+      var raw = cityInputEl.value;
+      var name = raw ? raw.trim() : "";
+  
+      if (!name) {
+        setCityError("Введите название города.");
+        hideSuggestions();
+        return;
       }
+  
+      // Trying to resolve city:
+      // by explicit data-city-id set from suggestions
+      // or by exact name (case-insensitive) in catalog
+      var selectedId = cityInputEl.getAttribute("data-city-id");
+      var city = null;
+  
+      if (selectedId) {
+        city = cityCatalog.findById(selectedId);
+      }
+      if (!city) {
+        city = cityCatalog.findByName(name);
+      }
+  
+      if (!city) {
+        setCityError(
+          "Город не найден. Выберите город из списка подсказок."
+        );
+        hideSuggestions();
+        return;
+      }
+  
+      // Duplicate check: already main city?
+      if (
+        appState.mainLocation &&
+        appState.mainLocation.type === "city" &&
+        appState.mainLocation.cityId === city.id
+      ) {
+        setCityError("Этот город уже выбран как основной.");
+        hideSuggestions();
+        return;
+      }
+  
+      // Duplicate check: already extra city?
+      var existsInExtra = appState.extraCities.some(function (c) {
+        return c.id === city.id;
+      });
+      if (existsInExtra) {
+        setCityError("Этот город уже есть в списке.");
+        hideSuggestions();
+        return;
+      }
+  
+      // If no mainLocation yet -> treat this city as "main" location
+      // Otherwise always add new cities to extraCities list
+      if (!appState.mainLocation) {
+        appState.mainLocation = {
+          type: "city",
+          cityId: city.id,
+          name: city.name,
+          country: city.country
+        };
+        appState.currentSelection = { kind: "city", cityId: city.id };
+      } else {
+        // Otherwise add to extraCities
+        appState.extraCities.push({
+          id: city.id,
+          name: city.name,
+          country: city.country
+        });
+  
+        // If no current selection yet, set it
+        if (!appState.currentSelection) {
+          appState.currentSelection = { kind: "city", cityId: city.id };
+        }
+      }
+  
+      // Reseting form state
+      cityInputEl.value = "";
+      cityInputEl.removeAttribute("data-city-id");
+      hideSuggestions();
+      setCityError("");
+  
+      renderCityList();
+  
+      setStatusMessage(
+        'Город "' +
+          city.name +
+          '" добавлен. Нажмите «Обновить», чтобы получить прогноз.',
+        "success"
+      );
+  
+      // Persist updated state (mainLocation, extraCities, currentSelection)
+      saveStateToStorage();
     }
-
-    // Reset form state
-    cityInputEl.value = "";
-    cityInputEl.removeAttribute("data-city-id");
-    hideSuggestions();
-    setCityError("");
-
-    renderCityList();
-
-    setStatusMessage(
-      'Город "' +
-        city.name +
-        '" добавлен. Нажмите «Обновить», чтобы получить прогноз.',
-      "success"
-    );
-
-    // Persist updated locations + selection
-    saveStateToStorage();
-  }
+  
 
   /**
    * Entry point for app
