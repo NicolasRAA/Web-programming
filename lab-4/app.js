@@ -53,6 +53,10 @@
   // Simple config for open-meteo API
   var WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast";
 
+  // Auto-load forecast on startup when restoring state
+  // If geo coords not available yet -> fetch right after geo success
+  var pendingAutoFetchAfterGeo = false;
+
   // LocalStorage key for persisting minimal app state (locations + selection)
   var STORAGE_KEY = "lab4_weather_app_state";
 
@@ -548,6 +552,12 @@
     );
 
     renderCityList();
+
+    // If startup wanted auto-fetch after geo becomes available, do it once
+    if (pendingAutoFetchAfterGeo) {
+      pendingAutoFetchAfterGeo = false;
+      fetchForecastForSelection();
+    }
 
     // Save successful geo state + selection
     saveStateToStorage();
@@ -1092,11 +1102,20 @@
         );
       }
 
+      // Auto-fetch forecast on startup if there is saved selection
+      if (appState.currentSelection) {
+        var coordsNow = getCoordsForSelection(appState.currentSelection);
+  
+        if (coordsNow) {
+          fetchForecastForSelection();
+        } else if (appState.currentSelection.kind === "geo") {
+          // Geo selection but coords are not ready yet -> fetch after geo success
+          pendingAutoFetchAfterGeo = true;
+        }
+      }
+  
       // If not saved mainLocation and geo not explicitly denied/unsupported, trying geolocation once more
-      if (
-        !appState.mainLocation &&
-        appState.geoStatus === "idle"
-      ) {
+      if (!appState.mainLocation && appState.geoStatus === "idle") {
         initGeolocation();
       }
     } else {
