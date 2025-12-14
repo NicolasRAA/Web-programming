@@ -35,6 +35,7 @@
   var statusPanelEl = null;
   var refreshBtn = null;
   var forecastContainerEl = null;
+  var forecastTitleEl = null;
 
   // City-related DOM (filled in start())
   var cityFormEl = null;
@@ -55,9 +56,6 @@
 
   // Simple config for open-meteo API
   var WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast";
-
-  // SVG assets
-  var ICONS_BASE_PATH = "assets/icons/";
 
   // Auto-load forecast on startup when restoring state
   // If geo coords not available yet -> fetch right after geo success
@@ -240,6 +238,58 @@
     }
 
     return null;
+  }
+
+  /**
+   * Helper: readable name for selection (forecast title)
+   */
+  function getSelectionDisplayName(selection) {
+    if (!selection) return null;
+
+    if (selection.kind === "geo") {
+      return "Текущее местоположение";
+    }
+
+    if (selection.kind === "city") {
+      // Prefer catalog name (source of truth), fall back to state
+      if (cityCatalog && cityCatalog.findById) {
+        var cityFromCatalog = cityCatalog.findById(selection.cityId);
+        if (cityFromCatalog && cityFromCatalog.name) return cityFromCatalog.name;
+      }
+
+      var cityFromState = findCityInStateById(selection.cityId);
+      if (cityFromState && cityFromState.name) return cityFromState.name;
+
+      return null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Helper: update forecast title ONLY when forecast is actually loaded
+   */
+  function updateForecastTitleForSelection(selection) {
+    if (!forecastTitleEl) return;
+
+    if (!selection) {
+      forecastTitleEl.textContent = "Прогноз погоды";
+      return;
+    }
+
+    var name = getSelectionDisplayName(selection);
+
+    if (selection.kind === "city" && name) {
+      forecastTitleEl.textContent = 'Прогноз погоды города "' + name + '"';
+      return;
+    }
+
+    if (selection.kind === "geo") {
+      forecastTitleEl.textContent = "Прогноз погоды: Текущее местоположение";
+      return;
+    }
+
+    forecastTitleEl.textContent = "Прогноз погоды";
   }
 
   /**
@@ -706,28 +756,6 @@
   }
 
   /**
-   * Helper: map open-meteo weather code to local SVG icon filename
-   */
-  function getIconFilenameForWeatherCode(code) {
-    if (code === 0) return "clear.svg";
-    if (code === 1 || code === 2) return "partly-cloudy.svg";
-    if (code === 3) return "cloudy.svg";
-    if (code === 45 || code === 48) return "fog.svg";
-    if (code === 51 || code === 53 || code === 55) return "rain.svg";
-    if (code === 56 || code === 57) return "hail.svg";
-    if (code === 61 || code === 63 || code === 65) return "rain.svg";
-    if (code === 66 || code === 67) return "hail.svg";
-    if (code === 71 || code === 73 || code === 75) return "snow.svg";
-    if (code === 77) return "snow.svg";
-    if (code === 80 || code === 81 || code === 82) return "rain.svg";
-    if (code === 85 || code === 86) return "snow-showers.svg";
-    if (code === 95) return "thunder.svg";
-    if (code === 96 || code === 99) return "hail.svg";
-
-    return "cloudy.svg";
-  }
-
-  /**
    * Helper: displaying title for day index (0..2) with small hint
    */
   function formatDayTitle(dateStr, index) {
@@ -841,40 +869,14 @@
 
     for (var i = 0; i < limit; i++) {
       var card = document.createElement("article");
-      card.className = "forecast-card forecast-card--with-icon";
-
-      var code = typeof codes[i] === "number" ? codes[i] : null;
-
-      var headerEl = document.createElement("div");
-      headerEl.className = "forecast-card-header";
-
-      var titleBlockEl = document.createElement("div");
-      titleBlockEl.className = "forecast-card-titleblock";
+      card.className = "forecast-card";
 
       var titleEl = document.createElement("h3");
       titleEl.className = "forecast-day-title";
       titleEl.textContent = formatDayTitle(times[i], i);
 
-      titleBlockEl.appendChild(titleEl);
-
-      var iconWrapEl = document.createElement("div");
-      iconWrapEl.className = "forecast-icon";
-
-      var imgEl = document.createElement("img");
-      if (code !== null) {
-        imgEl.src = ICONS_BASE_PATH + getIconFilenameForWeatherCode(code);
-        imgEl.alt = describeWeatherCode(code);
-      } else {
-        imgEl.src = ICONS_BASE_PATH + "cloudy.svg";
-        imgEl.alt = "Погода";
-      }
-      iconWrapEl.appendChild(imgEl);
-
-      headerEl.appendChild(titleBlockEl);
-      headerEl.appendChild(iconWrapEl);
-
       var tempEl = document.createElement("p");
-      tempEl.className = "forecast-range";
+      tempEl.className = "forecast-temp";
       tempEl.textContent =
         "от " +
         Math.round(tMin[i]) +
@@ -884,13 +886,14 @@
 
       var descEl = document.createElement("p");
       descEl.className = "forecast-desc";
+      var code = typeof codes[i] === "number" ? codes[i] : null;
       if (code !== null) {
         descEl.textContent = describeWeatherCode(code);
       } else {
         descEl.textContent = "Описание погоды недоступно.";
       }
 
-      card.appendChild(headerEl);
+      card.appendChild(titleEl);
       card.appendChild(tempEl);
       card.appendChild(descEl);
 
@@ -946,7 +949,19 @@
       return;
     }
 
-    var coords = getCoordsForSelection(appState.currentSelection);
+    // Snapshot selection for this request:
+    // title must update only when THIS forecast is actually loaded
+    var selectionSnapshot = null;
+    if (appState.currentSelection.kind === "geo") {
+      selectionSnapshot = { kind: "geo" };
+    } else if (appState.currentSelection.kind === "city") {
+      selectionSnapshot = {
+        kind: "city",
+        cityId: appState.currentSelection.cityId
+      };
+    }
+
+    var coords = getCoordsForSelection(selectionSnapshot);
     if (!coords) {
       setStatusMessage(
         "Не удалось определить координаты для выбранного города.",
@@ -974,6 +989,9 @@
       .then(function (data) {
         appState.isLoading = false;
         appState.weatherData = data;
+
+        // Update title only on successful load
+        updateForecastTitleForSelection(selectionSnapshot);
 
         setStatusMessage("Прогноз обновлён.", "success");
         renderForecastFromResponse(data);
@@ -1099,10 +1117,8 @@
         country: city.country
       });
 
-      // If there is no current selection yet (rare case), set it
-      if (!appState.currentSelection) {
-        appState.currentSelection = { kind: "city", cityId: city.id };
-      }
+      // Selecting newly added city so Refresh will update THIS city (less confusing)
+      appState.currentSelection = { kind: "city", cityId: city.id };
     }
 
     // Reset form state
@@ -1141,6 +1157,7 @@
     statusPanelEl = document.getElementById("status-panel");
     refreshBtn = document.getElementById("refresh-btn");
     forecastContainerEl = document.getElementById("forecast-container");
+    forecastTitleEl = document.getElementById("forecast-title");
 
     cityFormEl = document.getElementById("city-form");
     cityInputEl = document.getElementById("city-input");
