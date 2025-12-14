@@ -195,10 +195,7 @@
    * Helper: is geo location currently selected
    */
   function isGeoSelected() {
-    return (
-      appState.currentSelection &&
-      appState.currentSelection.kind === "geo"
-    );
+    return appState.currentSelection && appState.currentSelection.kind === "geo";
   }
 
   /**
@@ -303,8 +300,7 @@
     var msg = null;
 
     if (!selection) {
-      msg =
-        "Выберите город или текущее местоположение, чтобы увидеть прогноз.";
+      msg = "Выберите город или текущее местоположение, чтобы увидеть прогноз.";
     } else if (selection.kind === "geo") {
       msg =
         "Выбрано текущее местоположение. Нажмите «Обновить», чтобы загрузить прогноз.";
@@ -506,19 +502,13 @@
         selectCityBtn.type = "button";
         selectCityBtn.className = "btn btn-secondary";
         selectCityBtn.textContent = "Выбрать";
-        selectCityBtn.addEventListener(
-          "click",
-          createSelectCityHandler(city.id)
-        );
+        selectCityBtn.addEventListener("click", createSelectCityHandler(city.id));
 
         var deleteCityBtn = document.createElement("button");
         deleteCityBtn.type = "button";
         deleteCityBtn.className = "btn btn-secondary";
         deleteCityBtn.textContent = "Удалить";
-        deleteCityBtn.addEventListener(
-          "click",
-          createDeleteCityHandler(city.id)
-        );
+        deleteCityBtn.addEventListener("click", createDeleteCityHandler(city.id));
 
         buttons.appendChild(selectCityBtn);
         buttons.appendChild(deleteCityBtn);
@@ -607,19 +597,12 @@
     // Updating retry button state
     updateGeoRetryButtonVisibility();
 
-    setStatusMessage(
-      "Запрашиваем ваше текущее местоположение...",
-      "info"
-    );
+    setStatusMessage("Запрашиваем ваше текущее местоположение...", "info");
 
-    navigator.geolocation.getCurrentPosition(
-      handleGeoSuccess,
-      handleGeoError,
-      {
-        enableHighAccuracy: false,
-        timeout: 8000
-      }
-    );
+    navigator.geolocation.getCurrentPosition(handleGeoSuccess, handleGeoError, {
+      enableHighAccuracy: false,
+      timeout: 8000
+    });
   }
 
   /**
@@ -641,8 +624,7 @@
     appState.currentSelection = { kind: "geo" };
 
     if (locationNoteEl) {
-      locationNoteEl.textContent =
-        "Текущее местоположение: геоданные получены.";
+      locationNoteEl.textContent = "Текущее местоположение: геоданные получены.";
     }
 
     setStatusMessage(
@@ -684,8 +666,7 @@
         "Доступ к геолокации отклонён или недоступен. Введите город вручную ниже.";
     }
 
-    var msg =
-      "Не удалось получить геолокацию. Введите город вручную ниже.";
+    var msg = "Не удалось получить геолокацию. Введите город вручную ниже.";
 
     // PERMISSION_DENIED: user explicitly denied access
     if (
@@ -694,8 +675,7 @@
       typeof error.PERMISSION_DENIED === "number" &&
       error.code === error.PERMISSION_DENIED
     ) {
-      msg =
-        "Вы отклонили доступ к геолокации. Введите город вручную ниже.";
+      msg = "Вы отклонили доступ к геолокации. Введите город вручную ниже.";
     }
 
     setStatusMessage(msg, "error");
@@ -753,6 +733,73 @@
     if (code === 95) return "Гроза";
     if (code === 96 || code === 99) return "Гроза с градом";
     return "Погода: код " + code;
+  }
+
+  /**
+   * Helper: formatting YYYY-MM-DD to DD.MM.YYYY
+   */
+  function formatDateRu(dateStr) {
+    if (!dateStr || typeof dateStr !== "string") return "";
+    var parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    return parts[2] + "." + parts[1] + "." + parts[0];
+  }
+
+  /**
+   * Helper: weekday name for YYYY-MM-DD
+   */
+  function getWeekdayNameRu(dateStr) {
+    if (!dateStr || typeof dateStr !== "string") return null;
+
+    // Noon helps avoid edge cases around DST
+    var d = new Date(dateStr + "T12:00:00");
+    if (isNaN(d.getTime())) return null;
+
+    var dayIndex = d.getDay();
+    if (dayIndex === 0) return "Воскресенье";
+    if (dayIndex === 1) return "Понедельник";
+    if (dayIndex === 2) return "Вторник";
+    if (dayIndex === 3) return "Среда";
+    if (dayIndex === 4) return "Четверг";
+    if (dayIndex === 5) return "Пятница";
+    if (dayIndex === 6) return "Суббота";
+    return null;
+  }
+
+  /**
+   * Helper: map open-meteo weather code to local SVG icon filename
+   */
+  function getIconFilenameForWeatherCode(code) {
+    if (code === 0) return "clear.svg";
+    if (code === 1 || code === 2) return "partly-cloudy.svg";
+    if (code === 3) return "cloudy.svg";
+    if (code === 45 || code === 48) return "fog.svg";
+    if (code === 51 || code === 53 || code === 55) return "rain.svg";
+    if (code === 56 || code === 57) return "hail.svg";
+    if (code === 61 || code === 63 || code === 65) return "rain.svg";
+    if (code === 66 || code === 67) return "hail.svg";
+    if (code === 71 || code === 73 || code === 75) return "snow.svg";
+    if (code === 77) return "snow.svg";
+    if (code === 80 || code === 81 || code === 82) return "rain.svg";
+    if (code === 85 || code === 86) return "snow-showers.svg";
+    if (code === 95) return "thunder.svg";
+    if (code === 96 || code === 99) return "hail.svg";
+
+    return "cloudy.svg";
+  }
+
+  var ICONS_BASE_PATH = "assets/icons/";
+
+  function getWeatherIconPath(code) {
+    return ICONS_BASE_PATH + getIconFilenameForWeatherCode(code);
+  }
+
+  function setIconSrcWithFallback(imgEl, src) {
+    imgEl.onerror = function () {
+      imgEl.onerror = null;
+      imgEl.src = "assets/icons/cloudy.svg";
+    };
+    imgEl.src = src;
   }
 
   /**
@@ -852,10 +899,7 @@
       !data.daily.temperature_2m_max ||
       !data.daily.temperature_2m_min
     ) {
-      setStatusMessage(
-        "Не удалось разобрать ответ сервера погоды.",
-        "error"
-      );
+      setStatusMessage("Не удалось разобрать ответ сервера погоды.", "error");
       return;
     }
 
@@ -868,33 +912,63 @@
     var limit = totalDays < 3 ? totalDays : 3; // at least today + 2 if available
 
     for (var i = 0; i < limit; i++) {
+      var code = typeof codes[i] === "number" ? codes[i] : null;
+
       var card = document.createElement("article");
-      card.className = "forecast-card";
+      card.className = "forecast-card forecast-card--with-icon";
 
-      var titleEl = document.createElement("h3");
-      titleEl.className = "forecast-day-title";
-      titleEl.textContent = formatDayTitle(times[i], i);
+      // Header row: weekday/date on left, icon on right
+      var header = document.createElement("div");
+      header.className = "forecast-card-header";
 
-      var tempEl = document.createElement("p");
-      tempEl.className = "forecast-temp";
-      tempEl.textContent =
-        "от " +
-        Math.round(tMin[i]) +
-        "°C до " +
-        Math.round(tMax[i]) +
-        "°C";
+      var titleBlock = document.createElement("div");
+      titleBlock.className = "forecast-card-titleblock";
 
+      var dayNameEl = document.createElement("h3");
+      dayNameEl.className = "forecast-day-name";
+      dayNameEl.textContent = getWeekdayNameRu(times[i]) || times[i];
+
+      var dateEl = document.createElement("p");
+      dateEl.className = "forecast-date";
+      dateEl.textContent = formatDateRu(times[i]);
+
+      titleBlock.appendChild(dayNameEl);
+      titleBlock.appendChild(dateEl);
+
+      var iconWrap = document.createElement("div");
+      iconWrap.className = "forecast-icon";
+
+      var iconImg = document.createElement("img");
+      iconImg.alt = code !== null ? describeWeatherCode(code) : "Погода";
+
+      if (code !== null) {
+        setIconSrcWithFallback(iconImg, getWeatherIconPath(code));
+      } else {
+        setIconSrcWithFallback(iconImg, "assets/icons/cloudy.svg");
+      }
+
+      iconWrap.appendChild(iconImg);
+
+      header.appendChild(titleBlock);
+      header.appendChild(iconWrap);
+
+      // Temperature range line
+      var rangeEl = document.createElement("p");
+      rangeEl.className = "forecast-range";
+      rangeEl.textContent =
+        "от " + Math.round(tMin[i]) + "°C до " + Math.round(tMax[i]) + "°C";
+
+      // Description line
       var descEl = document.createElement("p");
       descEl.className = "forecast-desc";
-      var code = typeof codes[i] === "number" ? codes[i] : null;
       if (code !== null) {
         descEl.textContent = describeWeatherCode(code);
       } else {
         descEl.textContent = "Описание погоды недоступно.";
       }
 
-      card.appendChild(titleEl);
-      card.appendChild(tempEl);
+      card.appendChild(header);
+      card.appendChild(rangeEl);
       card.appendChild(descEl);
 
       forecastContainerEl.appendChild(card);
@@ -963,10 +1037,7 @@
 
     var coords = getCoordsForSelection(selectionSnapshot);
     if (!coords) {
-      setStatusMessage(
-        "Не удалось определить координаты для выбранного города.",
-        "error"
-      );
+      setStatusMessage("Не удалось определить координаты для выбранного города.", "error");
       return;
     }
 
@@ -999,10 +1070,7 @@
       .catch(function (error) {
         appState.isLoading = false;
         appState.lastError = String(error);
-        setStatusMessage(
-          "Ошибка при загрузке прогноза. Попробуйте ещё раз позже.",
-          "error"
-        );
+        setStatusMessage("Ошибка при загрузке прогноза. Попробуйте ещё раз позже.", "error");
         console.error("Weather API error:", error);
       });
   }
@@ -1013,10 +1081,7 @@
    * Pozhe will trigger HTTP weather requests for current selection
    */
   function handleRefreshClick() {
-    console.log(
-      "Refresh click. Will request weather for selection:",
-      appState.currentSelection
-    );
+    console.log("Refresh click. Will request weather for selection:", appState.currentSelection);
 
     if (!appState.currentSelection) {
       setStatusMessage(
@@ -1028,10 +1093,7 @@
 
     if (appState.isLoading) {
       // Basic guard against parallel requests
-      setStatusMessage(
-        "Запрос уже выполняется, подождите завершения.",
-        "info"
-      );
+      setStatusMessage("Запрос уже выполняется, подождите завершения.", "info");
       return;
     }
 
@@ -1069,9 +1131,7 @@
     }
 
     if (!city) {
-      setCityError(
-        "Город не найден. Выберите город из списка подсказок."
-      );
+      setCityError("Город не найден. Выберите город из списка подсказок.");
       hideSuggestions();
       return;
     }
@@ -1130,9 +1190,7 @@
     renderCityList();
 
     setStatusMessage(
-      'Город "' +
-        city.name +
-        '" добавлен. Нажмите «Обновить», чтобы получить прогноз.',
+      'Город "' + city.name + '" добавлен. Нажмите «Обновить», чтобы получить прогноз.',
       "success"
     );
 
@@ -1174,9 +1232,7 @@
     if (window.WEATHER_CITY_CATALOG) {
       cityCatalog = window.WEATHER_CITY_CATALOG;
     } else {
-      console.warn(
-        "WEATHER_CITY_CATALOG helper not found. City suggestions will be disabled."
-      );
+      console.warn("WEATHER_CITY_CATALOG helper not found. City suggestions will be disabled.");
     }
 
     if (!statusPanelEl) {

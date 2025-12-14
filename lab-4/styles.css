@@ -22,7 +22,8 @@ body {
 /* App wrapper */
 .app {
   min-height: 100vh;
-  max-width: 960px;
+  /* wider desktop */
+  max-width: 1280px;
   margin: 0 auto;
   padding: 16px;
 }
@@ -76,7 +77,8 @@ body {
 /* Columns layout */
 .columns {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.9fr);
+  /* slightly roomier right side */
+  grid-template-columns: minmax(280px, 1.1fr) minmax(0, 1.9fr);
   gap: 16px;
 }
 
@@ -291,55 +293,65 @@ body {
 
 .forecast-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
+  /* Wider cards so icon fits better */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
 }
 
-/* Placeholder for forecast cards ('ll fill later) */
+/* Forecast cards */
 .forecast-card {
   background: #020617;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid #1f2933;
-  padding: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+
+  /* If something still overflows, keep it inside */
+  overflow: hidden;
 }
 
-/* Forecast card typography */
-.forecast-day-title {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
+/* Header: weekday/date + icon */
+.forecast-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+
+  /* allowing wrapping so icon wont go outside */
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
-.forecast-temp {
-  margin: 0;
-  font-size: 0.9rem;
+.forecast-card-titleblock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  /* allowing text to shrink inside flex */
+  min-width: 0;
 }
 
-.forecast-desc {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #9ca3af;
-}
-
-/* Forecast icons + improved card layout */
-/* For later split day name + date into separate elements */
 .forecast-day-name {
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.01em;
+
+  /* prevent pushing icon out */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .forecast-date {
   margin: 0;
   font-size: 0.82rem;
   color: #9ca3af;
+  white-space: nowrap;
 }
 
-/* Icon wrapper (maybe <img> or inline <svg>) */
+/* Icon wrapper */
 .forecast-icon {
   width: 52px;
   height: 52px;
@@ -347,6 +359,9 @@ body {
   align-items: center;
   justify-content: center;
   flex: 0 0 52px;
+
+  /* if wrap happens, keep it right */
+  margin-left: auto;
 }
 
 .forecast-icon img,
@@ -356,29 +371,17 @@ body {
   display: block;
 }
 
-/* Title/date on left, icon on right */
-.forecast-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.forecast-card-titleblock {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* Slightly nicer spacing (potom new strcture) */
-.forecast-card--with-icon {
-  gap: 10px;
-}
-
+/* Range + desc */
 .forecast-range {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+.forecast-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
 }
 
 /* Footer */
@@ -416,5 +419,10 @@ footer a:hover {
     align-self: stretch;
     justify-content: center;
     width: 100%;
+  }
+
+  /* Allowing slightly smaller cards on mobile */
+  .forecast-container {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 }
