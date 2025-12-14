@@ -599,9 +599,13 @@
 
     renderCityList();
 
-    // If startup wanted auto-fetch after geo becomes available, do it once
+    // Auto-fetch forecast after geo becomes available:
+    //  on first successful permission
+    //  and when waiting for geo after restore
     if (pendingAutoFetchAfterGeo) {
       pendingAutoFetchAfterGeo = false;
+    }
+    if (!appState.isLoading) {
       fetchForecastForSelection();
     }
 
@@ -690,6 +694,9 @@
     if (code === 71 || code === 73 || code === 75) return "Снегопад";
     if (code === 77) return "Снежные зерна";
     if (code === 80 || code === 81 || code === 82) return "Ливневый дождь";
+    // adding open-meteo codes 85/86 for snow showers
+    if (code === 85) return "Ливневый снег";
+    if (code === 86) return "Сильный ливневый снег";
     if (code === 95) return "Гроза";
     if (code === 96 || code === 99) return "Гроза с градом";
     return "Погода: код " + code;
@@ -1024,11 +1031,9 @@
 
     // If there is no mainLocation yet (or geolocation is denied/unsupported),
     // treat this city as "main" location.
-    if (
-      !appState.mainLocation ||
-      appState.geoStatus === "denied" ||
-      appState.geoStatus === "unsupported"
-    ) {
+    // NOT overwriting existing main city when geoStatus is "denied"/"unsupported"
+    // Only set city as main if mainLocation missing
+    if (!appState.mainLocation) {
       appState.mainLocation = {
         type: "city",
         cityId: city.id,
@@ -1064,6 +1069,9 @@
         '" добавлен. Нажмите «Обновить», чтобы получить прогноз.',
       "success"
     );
+
+    // persisti updated cities + selection to survive reload
+    saveStateToStorage();
   }
 
   /**
