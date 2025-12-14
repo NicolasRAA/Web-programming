@@ -42,7 +42,9 @@
   var cityInputEl = null;
   var cityErrorEl = null;
   var suggestionsListEl = null;
-  var cityListEl = null;
+  // "Show cities" button to open dropdown even when input is empty
+  var showCitiesBtn = null;
+  var cityListEl = null;  
   var cityFieldWrapperEl = null; // wrapper around input + dropdown
 
   // Optional retry geolocation button (dynamically)
@@ -51,8 +53,10 @@
   // City catalog API from cities.js
   var cityCatalog = null;
 
-  var EMPTY_CITY_LIST_TEXT =
-    "Пока пусто. После настройки геолокации или добавления города они появятся в этом списке";
+  var EMPTY_CITY_LIST_TEXT = "Пока пусто. После настройки геолокации или добавления города они появятся в этом списке";
+
+  // How many cities to show in dropdown at once
+  var SUGGESTIONS_LIMIT = 10;
 
   // Simple config for open-meteo API
   var WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast";
@@ -109,7 +113,12 @@
       suggestionsListEl.removeChild(suggestionsListEl.firstChild);
     }
     suggestionsListEl.classList.remove("suggestions-list--open");
-  }
+  
+    // Keeping ARIA in sync
+    if (showCitiesBtn) {
+      showCitiesBtn.setAttribute("aria-expanded", "false");
+    }
+  }  
 
   /**
    * Creating click handler for suggestion item
@@ -136,13 +145,20 @@
     if (!suggestionsListEl || !cityCatalog) return;
 
     var trimmed = query ? query.trim() : "";
-    if (trimmed.length < 2) {
-      hideSuggestions();
-      return;
+    var suggestions = [];
+  
+    // If input empty -> show top N cities (not only after typing)
+    if (!trimmed) {
+      if (cityCatalog.getAll) {
+        suggestions = cityCatalog.getAll().slice(0, SUGGESTIONS_LIMIT);
+      }
+    } else {
+      // If user types -> filter list (suggest)
+      suggestions = cityCatalog.suggest(trimmed, SUGGESTIONS_LIMIT);
     }
 
-    var suggestions = cityCatalog.suggest(trimmed, 8);
     if (!suggestions || !suggestions.length) {
+      // No matches -> simply close dropdown (validation error remains on submit)
       hideSuggestions();
       return;
     }
@@ -157,12 +173,18 @@
       var li = document.createElement("li");
       li.textContent = city.name + " (" + city.country + ")";
       li.setAttribute("data-city-id", city.id);
+      li.setAttribute("role", "option");
       li.addEventListener("mousedown", createSuggestionClickHandler(city));
       suggestionsListEl.appendChild(li);
     }
 
     suggestionsListEl.classList.add("suggestions-list--open");
-  }
+  
+    // Keep ARIA in sync
+    if (showCitiesBtn) {
+      showCitiesBtn.setAttribute("aria-expanded", "true");
+    }
+  }  
 
   /**
    * Input handler for city text field
@@ -179,6 +201,34 @@
     var value = event.target.value || "";
     showSuggestionsForQuery(value);
   }
+
+  /**
+ * Focus handler for city input
+ * Opens dropdown
+ */
+function handleCityInputFocus() {
+  if (!cityInputEl) return;
+  showSuggestionsForQuery(cityInputEl.value || "");
+}
+
+/**
+ * Click handler for "Показать" button
+ * Toggles dropdown even when input is empty
+ */
+function handleShowCitiesClick(evt) {
+  evt.preventDefault();
+  if (!cityInputEl) return;
+
+  // Toggle behavior
+  if (suggestionsListEl && suggestionsListEl.classList.contains("suggestions-list--open")) {
+    hideSuggestions();
+    return;
+  }
+
+  // Open dropdown + keep focus for typing
+  cityInputEl.focus();
+  showSuggestionsForQuery(cityInputEl.value || "");
+}
 
   /**
    * Click handler for document:
@@ -1221,6 +1271,7 @@
     cityInputEl = document.getElementById("city-input");
     cityErrorEl = document.getElementById("city-error");
     suggestionsListEl = document.getElementById("city-suggestions");
+    showCitiesBtn = document.getElementById("show-cities-btn");
     cityListEl = document.getElementById("city-list");
     cityFieldWrapperEl = appRoot.querySelector(".field-with-dropdown");
 
@@ -1260,7 +1311,14 @@
 
     if (cityInputEl && suggestionsListEl && cityCatalog) {
       cityInputEl.addEventListener("input", handleCityInput);
+      
+      // Opening dropdown on focus
+      cityInputEl.addEventListener("focus", handleCityInputFocus);
     }
+
+    if (showCitiesBtn && cityCatalog) {
+      showCitiesBtn.addEventListener("click", handleShowCitiesClick);
+    }    
 
     // Global click handler to close suggestions when clicking outside
     document.addEventListener("click", handleDocumentClick);

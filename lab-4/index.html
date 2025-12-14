@@ -41,16 +41,36 @@
             <label class="field-label" for="city-input">Добавить город</label>
 
             <div class="field-with-dropdown">
-              <input
-                id="city-input"
-                name="city"
-                class="text-input"
-                type="text"
-                placeholder="Начните вводить название города"
-              >
-              <!-- will fill wiht JS -->
-              <ul id="city-suggestions" class="suggestions-list">
-              </ul>
+              <div class="field-row">
+                <input
+                  id="city-input"
+                  name="city"
+                  class="text-input"
+                  type="text"
+                  placeholder="Начните вводить название города"
+                  aria-autocomplete="list"
+                  aria-controls="city-suggestions"
+                  aria-expanded="false"
+                >
+            
+                <button
+                  id="show-cities-btn"
+                  type="button"
+                  class="btn btn-secondary btn-show-cities"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                >
+                  Показать
+                </button>
+              </div>
+            
+              <!-- will fill with JS -->
+              <ul
+                id="city-suggestions"
+                class="suggestions-list"
+                role="listbox"
+                aria-label="Список городов"
+              ></ul>
             </div>
 
             <p id="city-error" class="field-error" aria-live="polite"></p>

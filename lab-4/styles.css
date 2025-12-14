@@ -117,9 +117,24 @@ body {
   color: #e5e7eb;
 }
 
-.field-with-dropdown {
-  position: relative;
+/* Input + "Показать" button row (dropdown trigger) */
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.field-row .text-input {
+  flex: 1;
+}
+
+.btn-show-cities {
+  /* override .btn-secondary align-self so button aligns nicely with input */
+  align-self: stretch;
+  white-space: nowrap;
+  padding: 10px 12px;
+}
+
 
 .text-input {
   width: 100%;
