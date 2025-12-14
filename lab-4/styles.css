@@ -324,6 +324,63 @@ body {
   color: #9ca3af;
 }
 
+/* Forecast icons + improved card layout */
+/* For later split day name + date into separate elements */
+.forecast-day-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.forecast-date {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #9ca3af;
+}
+
+/* Icon wrapper (maybe <img> or inline <svg>) */
+.forecast-icon {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 52px;
+}
+
+.forecast-icon img,
+.forecast-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Title/date on left, icon on right */
+.forecast-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.forecast-card-titleblock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Slightly nicer spacing (potom new strcture) */
+.forecast-card--with-icon {
+  gap: 10px;
+}
+
+.forecast-range {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 /* Footer */
 footer {
   border-top: 1px solid #252b3a;
