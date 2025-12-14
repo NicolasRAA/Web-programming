@@ -56,6 +56,9 @@
   // Simple config for open-meteo API
   var WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast";
 
+  // SVG assets
+  var ICONS_BASE_PATH = "assets/icons/";
+
   // Auto-load forecast on startup when restoring state
   // If geo coords not available yet -> fetch right after geo success
   var pendingAutoFetchAfterGeo = false;
@@ -703,6 +706,28 @@
   }
 
   /**
+   * Helper: map open-meteo weather code to local SVG icon filename
+   */
+  function getIconFilenameForWeatherCode(code) {
+    if (code === 0) return "clear.svg";
+    if (code === 1 || code === 2) return "partly-cloudy.svg";
+    if (code === 3) return "cloudy.svg";
+    if (code === 45 || code === 48) return "fog.svg";
+    if (code === 51 || code === 53 || code === 55) return "rain.svg";
+    if (code === 56 || code === 57) return "hail.svg";
+    if (code === 61 || code === 63 || code === 65) return "rain.svg";
+    if (code === 66 || code === 67) return "hail.svg";
+    if (code === 71 || code === 73 || code === 75) return "snow.svg";
+    if (code === 77) return "snow.svg";
+    if (code === 80 || code === 81 || code === 82) return "rain.svg";
+    if (code === 85 || code === 86) return "snow-showers.svg";
+    if (code === 95) return "thunder.svg";
+    if (code === 96 || code === 99) return "hail.svg";
+
+    return "cloudy.svg";
+  }
+
+  /**
    * Helper: displaying title for day index (0..2) with small hint
    */
   function formatDayTitle(dateStr, index) {
@@ -816,14 +841,40 @@
 
     for (var i = 0; i < limit; i++) {
       var card = document.createElement("article");
-      card.className = "forecast-card";
+      card.className = "forecast-card forecast-card--with-icon";
+
+      var code = typeof codes[i] === "number" ? codes[i] : null;
+
+      var headerEl = document.createElement("div");
+      headerEl.className = "forecast-card-header";
+
+      var titleBlockEl = document.createElement("div");
+      titleBlockEl.className = "forecast-card-titleblock";
 
       var titleEl = document.createElement("h3");
       titleEl.className = "forecast-day-title";
       titleEl.textContent = formatDayTitle(times[i], i);
 
+      titleBlockEl.appendChild(titleEl);
+
+      var iconWrapEl = document.createElement("div");
+      iconWrapEl.className = "forecast-icon";
+
+      var imgEl = document.createElement("img");
+      if (code !== null) {
+        imgEl.src = ICONS_BASE_PATH + getIconFilenameForWeatherCode(code);
+        imgEl.alt = describeWeatherCode(code);
+      } else {
+        imgEl.src = ICONS_BASE_PATH + "cloudy.svg";
+        imgEl.alt = "Погода";
+      }
+      iconWrapEl.appendChild(imgEl);
+
+      headerEl.appendChild(titleBlockEl);
+      headerEl.appendChild(iconWrapEl);
+
       var tempEl = document.createElement("p");
-      tempEl.className = "forecast-temp";
+      tempEl.className = "forecast-range";
       tempEl.textContent =
         "от " +
         Math.round(tMin[i]) +
@@ -833,14 +884,13 @@
 
       var descEl = document.createElement("p");
       descEl.className = "forecast-desc";
-      var code = typeof codes[i] === "number" ? codes[i] : null;
       if (code !== null) {
         descEl.textContent = describeWeatherCode(code);
       } else {
         descEl.textContent = "Описание погоды недоступно.";
       }
 
-      card.appendChild(titleEl);
+      card.appendChild(headerEl);
       card.appendChild(tempEl);
       card.appendChild(descEl);
 
