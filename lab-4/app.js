@@ -56,7 +56,7 @@
   var EMPTY_CITY_LIST_TEXT = "Пока пусто. После настройки геолокации или добавления города они появятся в этом списке";
 
   // How many cities to show in dropdown at once
-  var SUGGESTIONS_LIMIT = 10;
+  var SUGGESTIONS_LIMIT = 100;
 
   // Simple config for open-meteo API
   var WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast";
