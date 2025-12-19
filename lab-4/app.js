@@ -29,7 +29,7 @@
     lastError: null,
 
     // Favorites only for extra cities (not for main location)
-    // Now, on thi scommit keeping favorites in runtime only (no localStorage yet)
+    // Persisting favorites in localStorage and restore ordering on startup
     favoriteCityIds: []
   };
 
@@ -263,6 +263,64 @@ function handleShowCitiesClick(evt) {
     );
   }
 
+  // Keeping favorites list clean and consistent with extraCities
+  // - only existing extra city ids
+  // - no duplicates
+  // - keeping saved order
+  function normalizeFavoriteCityIds() {
+    var extraIdMap = {};
+    for (var i = 0; i < appState.extraCities.length; i++) {
+      extraIdMap[appState.extraCities[i].id] = true;
+    }
+
+    var seen = {};
+    var out = [];
+    for (var j = 0; j < appState.favoriteCityIds.length; j++) {
+      var id = appState.favoriteCityIds[j];
+      if (extraIdMap[id] && !seen[id]) {
+        out.push(id);
+        seen[id] = true;
+      }
+    }
+
+    appState.favoriteCityIds = out;
+  }
+
+  // Favorites first, then the rest; favorites order is favoriteCityIds order
+  // Mutating extraCities so the ordering is persisted in localStorage
+  function applyFavoriteOrdering() {
+    var favPos = {};
+    for (var i = 0; i < appState.favoriteCityIds.length; i++) {
+      favPos[appState.favoriteCityIds[i]] = i;
+    }
+
+    var decorated = appState.extraCities.map(function (city, idx) {
+      return { city: city, idx: idx };
+    });
+
+    decorated.sort(function (a, b) {
+      var aFav = typeof favPos[a.city.id] === "number" ? 1 : 0;
+      var bFav = typeof favPos[b.city.id] === "number" ? 1 : 0;
+
+      // favorites first
+      if (aFav !== bFav) return bFav - aFav;
+
+      // both favorites -> order by favoriteCityIds position
+      if (aFav) {
+        var ap = favPos[a.city.id];
+        var bp = favPos[b.city.id];
+        if (ap !== bp) return ap - bp;
+      }
+
+      // both non-favorites (or fallback) -> keep current order stable
+      return a.idx - b.idx;
+    });
+
+    appState.extraCities = decorated.map(function (x) {
+      return x.city;
+    });
+  }
+
   // Favorites helpers (runtime only for this commit)
   function isCityFavorite(cityId) {
     if (!cityId) return false;
@@ -282,8 +340,15 @@ function handleShowCitiesClick(evt) {
       appState.favoriteCityIds.splice(idx, 1);
     }
 
+    // Keeping favorites clean + reorder extraCities so favorites stay on top
+    normalizeFavoriteCityIds();
+    applyFavoriteOrdering();
+
     // Re-render list so star icon + tag are updated immediately
     renderCityList();
+
+    // Persisting favorites + ordering
+    saveStateToStorage();
 
     // Lightweight feedback in status panel
     if (becameFavorite) {
@@ -941,7 +1006,8 @@ function handleShowCitiesClick(evt) {
       mainLocation: appState.mainLocation,
       extraCities: appState.extraCities,
       currentSelection: appState.currentSelection,
-      geoStatus: appState.geoStatus
+      geoStatus: appState.geoStatus,
+      favoriteCityIds: appState.favoriteCityIds
     };
   }
 
@@ -997,6 +1063,17 @@ function handleShowCitiesClick(evt) {
       } else {
         appState.geoStatus = "idle";
       }
+
+      // Restoring favorites (backward compatible with old saved state)
+      if (Array.isArray(parsed.favoriteCityIds)) {
+        appState.favoriteCityIds = parsed.favoriteCityIds;
+      } else {
+        appState.favoriteCityIds = [];
+      }
+
+      // Clean favorites + applying ordering so favorites are on top on startup
+      normalizeFavoriteCityIds();
+      applyFavoriteOrdering();
 
       return true;
     } catch (e) {
@@ -1297,6 +1374,10 @@ function handleShowCitiesClick(evt) {
         name: city.name,
         country: city.country
       });
+
+      // Keep favorites on top after adding a new city
+      normalizeFavoriteCityIds();
+      applyFavoriteOrdering();
 
       // Selecting newly added city so Refresh will update THIS city (less confusing)
       appState.currentSelection = { kind: "city", cityId: city.id };
