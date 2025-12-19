@@ -297,6 +297,38 @@ body {
   color: #93c5fd;
 }
 
+/* Extra city list highlights (main | favorites | active) */
+   .city-list-item--main {
+    background: rgba(16, 185, 129, 0.08);
+    border-radius: 8px;
+    padding: 6px 8px;
+  }
+  
+  .city-list-item--main .city-name {
+    color: #6ee7b7; 
+  }
+  
+  .city-list-item--favorite {
+    background: rgba(245, 158, 11, 0.08); 
+    border-radius: 8px;
+    padding: 6px 8px;
+  }
+  
+  .city-list-item--favorite .city-name {
+    color: #fcd34d;
+  }
+  
+  /* When an item is both favorite and active, active style should win */
+  .city-list-item--favorite.city-list-item--active,
+  .city-list-item--main.city-list-item--active {
+    background: #020617;
+  }
+  
+  .city-list-item--favorite.city-list-item--active .city-name,
+  .city-list-item--main.city-list-item--active .city-name {
+    color: #93c5fd;
+  }  
+
 .city-list-item-buttons {
   display: flex;
   gap: 6px;

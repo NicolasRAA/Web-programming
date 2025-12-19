@@ -562,7 +562,7 @@ function handleShowCitiesClick(evt) {
       hasAny = true;
 
       var mainLi = document.createElement("li");
-      mainLi.className = "city-list-item";
+      mainLi.className = "city-list-item city-list-item--main";
 
       var isActive = false;
       if (appState.mainLocation.type === "geo") {
@@ -640,6 +640,13 @@ function handleShowCitiesClick(evt) {
 
         var li = document.createElement("li");
         li.className = "city-list-item";
+
+        // Favorite highlight (soft tint)
+        if (isCityFavorite(city.id)) {
+          li.className += " city-list-item--favorite";
+        }
+
+        // Active highlight (strongest)
         if (isCitySelected(city.id)) {
           li.className += " city-list-item--active";
         }
