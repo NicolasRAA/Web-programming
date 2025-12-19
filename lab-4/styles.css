@@ -80,6 +80,18 @@ body {
   /* slightly roomier right side */
   grid-template-columns: minmax(280px, 1.1fr) minmax(0, 1.9fr);
   gap: 16px;
+
+  /* Grid areas to reorder sections on mobile */
+  grid-template-areas: "cities forecast";
+}
+
+/* Mapping each column to a named grid area */
+.column-left {
+  grid-area: cities;
+}
+
+.column-right {
+  grid-area: forecast;
 }
 
 .column {
@@ -429,6 +441,11 @@ footer a:hover {
 @media (max-width: 768px) {
   .columns {
     grid-template-columns: minmax(0, 1fr);
+
+    /* On mobile showing forecast first, then cities */
+    grid-template-areas:
+      "forecast"
+      "cities";
   }
 
   .toolbar {
