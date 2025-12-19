@@ -26,7 +26,11 @@
     currentSelection: null,
     // basic http state flags
     isLoading: false,
-    lastError: null
+    lastError: null,
+
+    // Favorites only for extra cities (not for main location)
+    // Now, on thi scommit keeping favorites in runtime only (no localStorage yet)
+    favoriteCityIds: []
   };
 
   // DOM cache (filled in start())
@@ -44,7 +48,7 @@
   var suggestionsListEl = null;
   // "Show cities" button to open dropdown even when input is empty
   var showCitiesBtn = null;
-  var cityListEl = null;  
+  var cityListEl = null;
   var cityFieldWrapperEl = null; // wrapper around input + dropdown
 
   // Optional retry geolocation button (dynamically)
@@ -259,6 +263,44 @@ function handleShowCitiesClick(evt) {
     );
   }
 
+  // Favorites helpers (runtime only for this commit)
+  function isCityFavorite(cityId) {
+    if (!cityId) return false;
+    return appState.favoriteCityIds.indexOf(cityId) !== -1;
+  }
+
+  function toggleCityFavorite(cityId) {
+    if (!cityId) return;
+
+    var idx = appState.favoriteCityIds.indexOf(cityId);
+    var becameFavorite = false;
+
+    if (idx === -1) {
+      appState.favoriteCityIds.push(cityId);
+      becameFavorite = true;
+    } else {
+      appState.favoriteCityIds.splice(idx, 1);
+    }
+
+    // Re-render list so star icon + tag are updated immediately
+    renderCityList();
+
+    // Lightweight feedback in status panel
+    if (becameFavorite) {
+      setStatusMessage("Город добавлен в избранное.", "success");
+    } else {
+      setStatusMessage("Город удалён из избранного.", "info");
+    }
+
+    // English: persistence will be implemented in the next commit
+  }
+
+  function createToggleFavoriteHandler(cityId) {
+    return function () {
+      toggleCityFavorite(cityId);
+    };
+  }
+
   /**
    * Find city by id in our current "state" (mainLocation as city + extraCities)
    */
@@ -387,6 +429,11 @@ function handleShowCitiesClick(evt) {
       // nothing actually removed
       return;
     }
+
+    // If removed city was a favorite, also remove it from favorites list
+    appState.favoriteCityIds = appState.favoriteCityIds.filter(function (id) {
+      return id !== cityId;
+    });
 
     // If we removed current selected city, fall back
     if (
@@ -539,7 +586,13 @@ function handleShowCitiesClick(evt) {
 
         var tag = document.createElement("span");
         tag.className = "city-tag";
-        tag.textContent = "дополнительный город";
+
+        // Showing a small "favorites" hint in the tag when starred
+        if (isCityFavorite(city.id)) {
+          tag.textContent = "дополнительный город · избранное";
+        } else {
+          tag.textContent = "дополнительный город";
+        }
 
         info.appendChild(name);
         info.appendChild(document.createElement("br"));
@@ -547,6 +600,23 @@ function handleShowCitiesClick(evt) {
 
         var buttons = document.createElement("div");
         buttons.className = "city-list-item-buttons";
+
+        // Favorite toggle button (extra cities only)
+        var favBtn = document.createElement("button");
+        favBtn.type = "button";
+        favBtn.className = "btn btn-secondary";
+
+        if (isCityFavorite(city.id)) {
+          favBtn.textContent = "★";
+          favBtn.title = "Убрать из избранного";
+          favBtn.setAttribute("aria-label", "Убрать город из избранного");
+        } else {
+          favBtn.textContent = "☆";
+          favBtn.title = "Добавить в избранное";
+          favBtn.setAttribute("aria-label", "Добавить город в избранное");
+        }
+
+        favBtn.addEventListener("click", createToggleFavoriteHandler(city.id));
 
         var selectCityBtn = document.createElement("button");
         selectCityBtn.type = "button";
@@ -560,6 +630,7 @@ function handleShowCitiesClick(evt) {
         deleteCityBtn.textContent = "Удалить";
         deleteCityBtn.addEventListener("click", createDeleteCityHandler(city.id));
 
+        buttons.appendChild(favBtn);
         buttons.appendChild(selectCityBtn);
         buttons.appendChild(deleteCityBtn);
 
