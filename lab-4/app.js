@@ -86,6 +86,9 @@
   var LOAD_MORE_STEP = 3; // extra days per click
   var LOAD_MORE_DELAY_MS = 700; // simulated loading delay
 
+  // skeleton cardas for 3 days while "loading"
+  var LOADING_PLACEHOLDERS_COUNT = 3;
+
   // Auto-load forecast on startup when restoring state
   // If geo coords not available yet -> fetch right after geo success
   var pendingAutoFetchAfterGeo = false;
@@ -940,6 +943,91 @@
     }
   }
 
+  // Skeleton helpers
+  function createSkeletonLine(width, heightPx) {
+    var line = document.createElement("span");
+    line.className = "skeleton-line";
+    line.textContent = " ";
+    line.style.display = "block";
+    line.style.width = width;
+    line.style.height = heightPx + "px";
+    line.style.backgroundColor = "rgba(0, 0, 0, 0.08)";
+    line.style.borderRadius = "999px";
+    line.style.margin = "6px 0";
+    return line;
+  }
+
+  function createSkeletonCircle(sizePx) {
+    var c = document.createElement("span");
+    c.className = "skeleton-circle";
+    c.textContent = " ";
+    c.style.display = "inline-block";
+    c.style.width = sizePx + "px";
+    c.style.height = sizePx + "px";
+    c.style.backgroundColor = "rgba(0, 0, 0, 0.08)";
+    c.style.borderRadius = "50%";
+    return c;
+  }
+
+  function createSkeletonForecastCard() {
+    var card = document.createElement("article");
+    card.className = "forecast-card forecast-card--with-icon forecast-card--skeleton";
+    card.setAttribute("aria-busy", "true");
+
+    // Header row: weekday/date on left, icon on right
+    var header = document.createElement("div");
+    header.className = "forecast-card-header";
+
+    var titleBlock = document.createElement("div");
+    titleBlock.className = "forecast-card-titleblock";
+
+    // Fake "day name" + "date"
+    titleBlock.appendChild(createSkeletonLine("70%", 14));
+    titleBlock.appendChild(createSkeletonLine("45%", 12));
+
+    var iconWrap = document.createElement("div");
+    iconWrap.className = "forecast-icon";
+    iconWrap.appendChild(createSkeletonCircle(36));
+
+    header.appendChild(titleBlock);
+    header.appendChild(iconWrap);
+
+    // Fake range + description
+    var rangeEl = document.createElement("p");
+    rangeEl.className = "forecast-range";
+    rangeEl.appendChild(createSkeletonLine("80%", 12));
+
+    var descEl = document.createElement("p");
+    descEl.className = "forecast-desc";
+    descEl.appendChild(createSkeletonLine("60%", 12));
+
+    card.appendChild(header);
+    card.appendChild(rangeEl);
+    card.appendChild(descEl);
+
+    return card;
+  }
+
+  function renderForecastSkeletonPlaceholders(count) {
+    if (!forecastContainerEl) return;
+
+    clearForecast();
+
+    var n = typeof count === "number" ? count : LOADING_PLACEHOLDERS_COUNT;
+    for (var i = 0; i < n; i++) {
+      forecastContainerEl.appendChild(createSkeletonForecastCard());
+    }
+  }
+
+  function appendForecastSkeletonPlaceholders(count) {
+    if (!forecastContainerEl) return;
+
+    var n = typeof count === "number" ? count : LOADING_PLACEHOLDERS_COUNT;
+    for (var i = 0; i < n; i++) {
+      forecastContainerEl.appendChild(createSkeletonForecastCard());
+    }
+  }
+
   function isSameSelection(a, b) {
     if (!a || !b) return false;
     if (a.kind !== b.kind) return false;
@@ -1049,6 +1137,8 @@
     appState.isLoadMoreLoading = true;
     updateLoadMoreControlState(appState.weatherData);
     setStatusMessage("Загружаем дополнительные дни прогноза...", "info");
+
+    appendForecastSkeletonPlaceholders(LOADING_PLACEHOLDERS_COUNT);
 
     window.setTimeout(function () {
       appState.forecastViewDaysCurrent = Math.min(shown + LOAD_MORE_STEP, totalDays);
@@ -1449,7 +1539,7 @@
 
     appState.isLoading = true;
     appState.lastError = null;
-    clearForecast();
+    renderForecastSkeletonPlaceholders(LOADING_PLACEHOLDERS_COUNT);
 
     // Showing simple loading state through status panel
     setStatusMessage("Загружаем прогноз погоды...", "info");
