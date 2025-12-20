@@ -35,4 +35,9 @@
   - **Страница:** https://nicolasraa.github.io/Web-programming/lab-3/
 
 
-*(Следующие работы будут добавлены по мере выполнения)*
+
+- **ЛР4 — Прогноз погоды** *(JS (DOM API) / CSS / Open-Meteo API / localStorage)*
+
+  > **Кратко:** Приложение прогноза погоды с геолокацией, городами и сохранением состояния
+  - **Репозиторий:** https://github.com/NicolasRAA/Web-programming/tree/main/lab-4  
+  - **Страница:** https://nicolasraa.github.io/Web-programming/lab-4/
