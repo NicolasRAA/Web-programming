@@ -65,6 +65,10 @@
   // Simple config for open-meteo API
   var WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast";
 
+  // Requesting more days from API, but keeping UI default view short
+  var FORECAST_REQUEST_DAYS = 10; // extended payload for future UI
+  var FORECAST_VIEW_DAYS = 3;     // default: showing only 3 days
+
   // Auto-load forecast on startup when restoring state
   // If geo coords not available yet -> fetch right after geo success
   var pendingAutoFetchAfterGeo = false;
@@ -913,20 +917,36 @@ function handleShowCitiesClick(evt) {
     }
   }
 
-  /**
-   * Helper: building open-meteo URL for given coordinates
-   * Requesting daily max/min temp and weather code for 3 days
-   */
-  function buildForecastUrl(lat, lon) {
-    var params = [
-      "latitude=" + encodeURIComponent(lat),
-      "longitude=" + encodeURIComponent(lon),
-      "daily=temperature_2m_max,temperature_2m_min,weathercode",
-      "timezone=auto",
-      "forecast_days=3"
-    ];
-    return WEATHER_API_BASE + "?" + params.join("&");
-  }
+/**
+ * Helper: building open-meteo URL for given coordinates
+ * Requesting extended daily data for FORECAST_REQUEST_DAYS
+ * UI still shows only first FORECAST_VIEW_DAYS days
+ */
+function buildForecastUrl(lat, lon) {
+  // More daily fields for future use (UI still shows 3-day summary)
+  var dailyVars =
+    "temperature_2m_max," +
+    "temperature_2m_min," +
+    "weathercode," +
+    "precipitation_sum," +
+    "precipitation_probability_max," +
+    "windspeed_10m_max," +
+    "windgusts_10m_max," +
+    "winddirection_10m_dominant," +
+    "uv_index_max," +
+    "sunrise," +
+    "sunset";
+
+  var params = [
+    "latitude=" + encodeURIComponent(lat),
+    "longitude=" + encodeURIComponent(lon),
+    "daily=" + dailyVars,
+    "timezone=auto",
+    "forecast_days=" + encodeURIComponent(FORECAST_REQUEST_DAYS)
+  ];
+
+  return WEATHER_API_BASE + "?" + params.join("&");
+}
 
   /**
    * Helper: describing open-meteo weather code in simple text po russki
@@ -1136,7 +1156,12 @@ function handleShowCitiesClick(evt) {
     var codes = data.daily.weathercode || [];
 
     var totalDays = times.length;
-    var limit = totalDays < 3 ? totalDays : 3; // at least today + 2 if available
+
+    /**
+    * Render simple 3-day forecast cards from open-meteo response
+    * (API may contain more days / more fields)
+    */
+    var limit = totalDays < FORECAST_VIEW_DAYS ? totalDays : FORECAST_VIEW_DAYS;
 
     for (var i = 0; i < limit; i++) {
       var code = typeof codes[i] === "number" ? codes[i] : null;
