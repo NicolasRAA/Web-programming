@@ -449,6 +449,12 @@ body {
   color: #9ca3af;
 }
 
+.forecast-controls {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
 /* Footer */
 footer {
   border-top: 1px solid #252b3a;

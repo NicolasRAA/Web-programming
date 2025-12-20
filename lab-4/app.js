@@ -28,6 +28,15 @@
     isLoading: false,
     lastError: null,
 
+    // how many days are currently visible in forecast UI
+    forecastViewDaysCurrent: 3,
+
+    // last selection for which forecastData is loaded (to avoid confusion)
+    lastForecastSelection: null,
+
+    // simulated "load more" state
+    isLoadMoreLoading: false,
+
     // Favorites only for extra cities (not for main location)
     // Persisting favorites in localStorage and restore ordering on startup
     favoriteCityIds: []
@@ -40,6 +49,10 @@
   var refreshBtn = null;
   var forecastContainerEl = null;
   var forecastTitleEl = null;
+
+  // Forecast controls (load more)
+  var forecastControlsEl = null;
+  var loadMoreBtn = null;
 
   // City-related DOM (filled in start())
   var cityFormEl = null;
@@ -67,7 +80,11 @@
 
   // Requesting more days from API, but keeping UI default view short
   var FORECAST_REQUEST_DAYS = 10; // extended payload for future UI
-  var FORECAST_VIEW_DAYS = 3;     // default: showing only 3 days
+  var FORECAST_VIEW_DAYS = 3; // default: showing only 3 days
+
+  // "Load more" behavior
+  var LOAD_MORE_STEP = 3; // extra days per click
+  var LOAD_MORE_DELAY_MS = 700; // simulated loading delay
 
   // Auto-load forecast on startup when restoring state
   // If geo coords not available yet -> fetch right after geo success
@@ -214,32 +231,35 @@
   }
 
   /**
- * Focus handler for city input
- * Opens dropdown
- */
-function handleCityInputFocus() {
-  if (!cityInputEl) return;
-  showSuggestionsForQuery(cityInputEl.value || "");
-}
-
-/**
- * Click handler for "Показать" button
- * Toggles dropdown even when input is empty
- */
-function handleShowCitiesClick(evt) {
-  evt.preventDefault();
-  if (!cityInputEl) return;
-
-  // Toggle behavior
-  if (suggestionsListEl && suggestionsListEl.classList.contains("suggestions-list--open")) {
-    hideSuggestions();
-    return;
+   * Focus handler for city input
+   * Opens dropdown
+   */
+  function handleCityInputFocus() {
+    if (!cityInputEl) return;
+    showSuggestionsForQuery(cityInputEl.value || "");
   }
 
-  // Open dropdown + keep focus for typing
-  cityInputEl.focus();
-  showSuggestionsForQuery(cityInputEl.value || "");
-}
+  /**
+   * Click handler for "Показать" button
+   * Toggles dropdown even when input is empty
+   */
+  function handleShowCitiesClick(evt) {
+    evt.preventDefault();
+    if (!cityInputEl) return;
+
+    // Toggle behavior
+    if (
+      suggestionsListEl &&
+      suggestionsListEl.classList.contains("suggestions-list--open")
+    ) {
+      hideSuggestions();
+      return;
+    }
+
+    // Open dropdown + keep focus for typing
+    cityInputEl.focus();
+    showSuggestionsForQuery(cityInputEl.value || "");
+  }
 
   /**
    * Click handler for document:
@@ -296,10 +316,12 @@ function handleShowCitiesClick(evt) {
   function enforceFavoritesLimit() {
     if (appState.favoriteCityIds.length > MAX_FAVORITES) {
       // Keeping only first MAX_FAVORITES in saved order
-      appState.favoriteCityIds = appState.favoriteCityIds.slice(0, MAX_FAVORITES);
+      appState.favoriteCityIds = appState.favoriteCityIds.slice(
+        0,
+        MAX_FAVORITES
+      );
     }
   }
- 
 
   // Favorites first, then the rest; favorites order is favoriteCityIds order
   // Mutating extraCities so the ordering is persisted in localStorage
@@ -433,7 +455,8 @@ function handleShowCitiesClick(evt) {
       // Prefer catalog name (source of truth), fall back to state
       if (cityCatalog && cityCatalog.findById) {
         var cityFromCatalog = cityCatalog.findById(selection.cityId);
-        if (cityFromCatalog && cityFromCatalog.name) return cityFromCatalog.name;
+        if (cityFromCatalog && cityFromCatalog.name)
+          return cityFromCatalog.name;
       }
 
       var cityFromState = findCityInStateById(selection.cityId);
@@ -917,36 +940,157 @@ function handleShowCitiesClick(evt) {
     }
   }
 
-/**
- * Helper: building open-meteo URL for given coordinates
- * Requesting extended daily data for FORECAST_REQUEST_DAYS
- * UI still shows only first FORECAST_VIEW_DAYS days
- */
-function buildForecastUrl(lat, lon) {
-  // More daily fields for future use (UI still shows 3-day summary)
-  var dailyVars =
-    "temperature_2m_max," +
-    "temperature_2m_min," +
-    "weathercode," +
-    "precipitation_sum," +
-    "precipitation_probability_max," +
-    "windspeed_10m_max," +
-    "windgusts_10m_max," +
-    "winddirection_10m_dominant," +
-    "uv_index_max," +
-    "sunrise," +
-    "sunset";
+  function isSameSelection(a, b) {
+    if (!a || !b) return false;
+    if (a.kind !== b.kind) return false;
+    if (a.kind === "city") return a.cityId === b.cityId;
+    return true; // geo
+  }
 
-  var params = [
-    "latitude=" + encodeURIComponent(lat),
-    "longitude=" + encodeURIComponent(lon),
-    "daily=" + dailyVars,
-    "timezone=auto",
-    "forecast_days=" + encodeURIComponent(FORECAST_REQUEST_DAYS)
-  ];
+  function getTotalDaysFromWeatherData(data) {
+    if (!data || !data.daily || !Array.isArray(data.daily.time)) return 0;
+    return data.daily.time.length;
+  }
 
-  return WEATHER_API_BASE + "?" + params.join("&");
-}
+  function ensureForecastControls() {
+    if (!forecastContainerEl) return;
+    if (forecastControlsEl) return;
+
+    forecastControlsEl = document.createElement("div");
+    forecastControlsEl.className = "forecast-controls";
+
+    loadMoreBtn = document.createElement("button");
+    loadMoreBtn.type = "button";
+    loadMoreBtn.className = "btn btn-secondary";
+    loadMoreBtn.textContent = "Показать ещё";
+    loadMoreBtn.addEventListener("click", handleLoadMoreClick);
+
+    forecastControlsEl.appendChild(loadMoreBtn);
+
+    // Inserting controls right after forecast container
+    var parent = forecastContainerEl.parentNode;
+    if (!parent) return;
+
+    if (forecastContainerEl.nextSibling) {
+      parent.insertBefore(forecastControlsEl, forecastContainerEl.nextSibling);
+    } else {
+      parent.appendChild(forecastControlsEl);
+    }
+  }
+
+  function hideLoadMoreControl() {
+    if (!forecastControlsEl) return;
+    forecastControlsEl.style.display = "none";
+  }
+
+  function updateLoadMoreControlState(data) {
+    if (!forecastControlsEl || !loadMoreBtn) return;
+
+    var totalDays = getTotalDaysFromWeatherData(data);
+    var shown = appState.forecastViewDaysCurrent || FORECAST_VIEW_DAYS;
+
+    // No forecast loaded yet -> hide
+    if (!totalDays) {
+      hideLoadMoreControl();
+      return;
+    }
+
+    // Showing only if there are more days to reveal
+    var canShowMore = totalDays > shown;
+    forecastControlsEl.style.display = canShowMore ? "flex" : "none";
+
+    if (!canShowMore) return;
+
+    var remaining = totalDays - shown;
+    var next = remaining < LOAD_MORE_STEP ? remaining : LOAD_MORE_STEP;
+
+    // Disabled when HTTP loading or simulated loading
+    var disabled = appState.isLoading || appState.isLoadMoreLoading;
+    loadMoreBtn.disabled = disabled;
+
+    if (appState.isLoadMoreLoading) {
+      loadMoreBtn.textContent = "Загружаем...";
+    } else {
+      loadMoreBtn.textContent = "Показать ещё " + next + " дн.";
+    }
+  }
+
+  function handleLoadMoreClick() {
+    // Guard: no parallel operations
+    if (appState.isLoading || appState.isLoadMoreLoading) return;
+
+    // Must have data
+    if (!appState.weatherData || !appState.weatherData.daily) {
+      setStatusMessage("Сначала загрузите прогноз через «Обновить».", "info");
+      return;
+    }
+
+    // To aviod confusion: selection changed but forecast not refreshed
+    if (
+      appState.currentSelection &&
+      appState.lastForecastSelection &&
+      !isSameSelection(appState.currentSelection, appState.lastForecastSelection)
+    ) {
+      setStatusMessage(
+        "Вы выбрали другой город. Нажмите «Обновить», чтобы загрузить прогноз для нового выбора.",
+        "info"
+      );
+      return;
+    }
+
+    var totalDays = getTotalDaysFromWeatherData(appState.weatherData);
+    var shown = appState.forecastViewDaysCurrent || FORECAST_VIEW_DAYS;
+
+    if (shown >= totalDays) {
+      updateLoadMoreControlState(appState.weatherData);
+      return;
+    }
+
+    appState.isLoadMoreLoading = true;
+    updateLoadMoreControlState(appState.weatherData);
+    setStatusMessage("Загружаем дополнительные дни прогноза...", "info");
+
+    window.setTimeout(function () {
+      appState.forecastViewDaysCurrent = Math.min(shown + LOAD_MORE_STEP, totalDays);
+
+      appState.isLoadMoreLoading = false;
+
+      // Re-render with more days
+      renderForecastFromResponse(appState.weatherData);
+      setStatusMessage("Показаны дополнительные дни прогноза.", "success");
+    }, LOAD_MORE_DELAY_MS);
+  }
+
+  /**
+   * Helper: building open-meteo URL for given coordinates
+   * Requesting extended daily data for FORECAST_REQUEST_DAYS
+   * UI still shows only first FORECAST_VIEW_DAYS days
+   */
+  function buildForecastUrl(lat, lon) {
+    // More daily fields for future use (UI still shows 3-day summary)
+    var dailyVars =
+      "temperature_2m_max," +
+      "temperature_2m_min," +
+      "weathercode," +
+      "precipitation_sum," +
+      "precipitation_probability_max," +
+      "windspeed_10m_max," +
+      "windgusts_10m_max," +
+      "winddirection_10m_dominant," +
+      "uv_index_max," +
+      "sunrise," +
+      "sunset";
+
+    var params = [
+      "latitude=" + encodeURIComponent(lat),
+      "longitude=" + encodeURIComponent(lon),
+      "daily=" + dailyVars,
+      "timezone=auto",
+      "forecast_days=" + encodeURIComponent(FORECAST_REQUEST_DAYS)
+    ];
+
+    return WEATHER_API_BASE + "?" + params.join("&");
+  }
 
   /**
    * Helper: describing open-meteo weather code in simple text po russki
@@ -1097,10 +1241,7 @@ function buildForecastUrl(lat, lon) {
         appState.extraCities = [];
       }
 
-      if (
-        parsed.currentSelection &&
-        typeof parsed.currentSelection === "object"
-      ) {
+      if (parsed.currentSelection && typeof parsed.currentSelection === "object") {
         appState.currentSelection = parsed.currentSelection;
       } else {
         appState.currentSelection = null;
@@ -1146,6 +1287,7 @@ function buildForecastUrl(lat, lon) {
       !data.daily.temperature_2m_max ||
       !data.daily.temperature_2m_min
     ) {
+      hideLoadMoreControl();
       setStatusMessage("Не удалось разобрать ответ сервера погоды.", "error");
       return;
     }
@@ -1158,10 +1300,15 @@ function buildForecastUrl(lat, lon) {
     var totalDays = times.length;
 
     /**
-    * Render simple 3-day forecast cards from open-meteo response
-    * (API may contain more days / more fields)
-    */
-    var limit = totalDays < FORECAST_VIEW_DAYS ? totalDays : FORECAST_VIEW_DAYS;
+     * Render simple 3-day forecast cards from open-meteo response
+     * (API may contain more days / more fields)
+     */
+    var viewDays =
+      typeof appState.forecastViewDaysCurrent === "number"
+        ? appState.forecastViewDaysCurrent
+        : FORECAST_VIEW_DAYS;
+
+    var limit = totalDays < viewDays ? totalDays : viewDays;
 
     for (var i = 0; i < limit; i++) {
       var code = typeof codes[i] === "number" ? codes[i] : null;
@@ -1225,6 +1372,8 @@ function buildForecastUrl(lat, lon) {
 
       forecastContainerEl.appendChild(card);
     }
+
+    updateLoadMoreControlState(data);
   }
 
   /**
@@ -1289,7 +1438,10 @@ function buildForecastUrl(lat, lon) {
 
     var coords = getCoordsForSelection(selectionSnapshot);
     if (!coords) {
-      setStatusMessage("Не удалось определить координаты для выбранного города.", "error");
+      setStatusMessage(
+        "Не удалось определить координаты для выбранного города.",
+        "error"
+      );
       return;
     }
 
@@ -1301,6 +1453,11 @@ function buildForecastUrl(lat, lon) {
 
     // Showing simple loading state through status panel
     setStatusMessage("Загружаем прогноз погоды...", "info");
+
+    // Reseting view to default 3-day on each fresh fetch
+    appState.forecastViewDaysCurrent = FORECAST_VIEW_DAYS;
+    appState.isLoadMoreLoading = false;
+    hideLoadMoreControl();
 
     fetch(url)
       .then(function (response) {
@@ -1317,12 +1474,18 @@ function buildForecastUrl(lat, lon) {
         updateForecastTitleForSelection(selectionSnapshot);
 
         setStatusMessage("Прогноз обновлён.", "success");
+        // Remembering which selection produced this forecast
+        appState.lastForecastSelection = selectionSnapshot;
         renderForecastFromResponse(data);
       })
       .catch(function (error) {
         appState.isLoading = false;
         appState.lastError = String(error);
-        setStatusMessage("Ошибка при загрузке прогноза. Попробуйте ещё раз позже.", "error");
+        hideLoadMoreControl();
+        setStatusMessage(
+          "Ошибка при загрузке прогноза. Попробуйте ещё раз позже.",
+          "error"
+        );
         console.error("Weather API error:", error);
       });
   }
@@ -1333,7 +1496,10 @@ function buildForecastUrl(lat, lon) {
    * Pozhe will trigger HTTP weather requests for current selection
    */
   function handleRefreshClick() {
-    console.log("Refresh click. Will request weather for selection:", appState.currentSelection);
+    console.log(
+      "Refresh click. Will request weather for selection:",
+      appState.currentSelection
+    );
 
     if (!appState.currentSelection) {
       setStatusMessage(
@@ -1473,6 +1639,9 @@ function buildForecastUrl(lat, lon) {
     refreshBtn = document.getElementById("refresh-btn");
     forecastContainerEl = document.getElementById("forecast-container");
     forecastTitleEl = document.getElementById("forecast-title");
+
+    ensureForecastControls();
+    hideLoadMoreControl();
 
     cityFormEl = document.getElementById("city-form");
     cityInputEl = document.getElementById("city-input");
