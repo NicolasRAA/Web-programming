@@ -606,3 +606,14 @@ footer a:hover {
   box-shadow: none !important;
   cursor: default !important;
 }
+
+.city-list-toggle{
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.city-list-toggle .btn{
+  width: 100%;
+  justify-content: center;
+}

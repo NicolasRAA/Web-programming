@@ -42,7 +42,10 @@
 
     // Favorites only for extra cities (not for main location)
     // Persisting favorites in localStorage and restore ordering on startup
-    favoriteCityIds: []
+    favoriteCityIds: [],
+
+    // City list "show more" UI state
+    isCityListExpanded: false
   };
 
   // DOM cache (filled in start())
@@ -95,12 +98,19 @@
   // skeleton cardas for 3 days while "loading"
   var LOADING_PLACEHOLDERS_COUNT = 3;
 
+  // City list "show more" behavior
+  var CITY_LIST_VISIBLE_TOTAL = 12; // including main location
+
   // Auto-load forecast on startup when restoring state
   // If geo coords not available yet -> fetch right after geo success
   var pendingAutoFetchAfterGeo = false;
 
   // LocalStorage key for persisting minimal app state (locations + selection)
   var STORAGE_KEY = "lab4_weather_app_state";
+
+  // City list toggle (show more / collapse)
+  var cityListToggleWrapEl = null;
+  var cityListToggleBtn = null;
 
   /**
    * Helper update status panel with single message
@@ -608,6 +618,61 @@
     };
   }
 
+  // Show more cor cities
+  function ensureCityListToggleControl() {
+    if (!cityListEl) return;
+    if (cityListToggleWrapEl) return;
+  
+    cityListToggleWrapEl = document.createElement("div");
+    cityListToggleWrapEl.className = "city-list-toggle";
+  
+    cityListToggleBtn = document.createElement("button");
+    cityListToggleBtn.type = "button";
+    cityListToggleBtn.className = "btn btn-secondary";
+    cityListToggleBtn.addEventListener("click", handleCityListToggleClick);
+  
+    cityListToggleWrapEl.appendChild(cityListToggleBtn);
+  
+    // Placing toggle under the list
+    var parent = cityListEl.parentNode;
+    if (!parent) return;
+  
+    if (cityListEl.nextSibling) {
+      parent.insertBefore(cityListToggleWrapEl, cityListEl.nextSibling);
+    } else {
+      parent.appendChild(cityListToggleWrapEl);
+    }
+  }
+  
+  function handleCityListToggleClick() {
+    appState.isCityListExpanded = !appState.isCityListExpanded;
+    renderCityList();
+  }
+  
+  function updateCityListToggleUI(totalCities, isOverLimit) {
+    ensureCityListToggleControl();
+    if (!cityListToggleWrapEl || !cityListToggleBtn) return;
+  
+    if (!isOverLimit) {
+      // If not over limit -> hide + reset to collapsed
+      cityListToggleWrapEl.style.display = "none";
+      appState.isCityListExpanded = false;
+      return;
+    }
+  
+    cityListToggleWrapEl.style.display = "flex";
+  
+    var hiddenCount = totalCities - CITY_LIST_VISIBLE_TOTAL;
+  
+    if (appState.isCityListExpanded) {
+      cityListToggleBtn.textContent = "Свернуть ▲";
+      cityListToggleBtn.setAttribute("aria-expanded", "true");
+    } else {
+      cityListToggleBtn.textContent = "Показать ещё " + hiddenCount + " ▼";
+      cityListToggleBtn.setAttribute("aria-expanded", "false");
+    }
+  }  
+
   /**
    * Render left column list: current location + extra cities
    */
@@ -619,6 +684,29 @@
     }
 
     var hasAny = false;
+
+    // =========================================================
+    // City list "show more" logic:
+    // - If total cities (main + extra) > CITY_LIST_VISIBLE_TOTAL (12),
+    //   show only 12 on first view (main + 11 extra) and display toggle button
+    // - If total <= 12, render all and hide toggle button
+    // =========================================================
+    var hasMain = !!appState.mainLocation;
+    var extraCount = appState.extraCities ? appState.extraCities.length : 0;
+    var totalCities = (hasMain ? 1 : 0) + extraCount;
+    var isOverLimit = totalCities > CITY_LIST_VISIBLE_TOTAL;
+
+    // how many total list items we render right now
+    var visibleTotal = totalCities;
+    if (!appState.isCityListExpanded && isOverLimit) {
+      visibleTotal = CITY_LIST_VISIBLE_TOTAL;
+    }
+
+    // how many "extra cities" we are allowed to render
+    // (main location takes one slot when present)
+    var extraToRender = visibleTotal - (hasMain ? 1 : 0);
+    if (extraToRender < 0) extraToRender = 0;
+    if (extraToRender > extraCount) extraToRender = extraCount;
 
     // Main location entry (geo or city)
     if (appState.mainLocation) {
@@ -698,7 +786,8 @@
     if (appState.extraCities && appState.extraCities.length) {
       hasAny = true;
 
-      for (var i = 0; i < appState.extraCities.length; i++) {
+      // If collapsed and over limit -> render only extraToRender items
+      for (var i = 0; i < extraToRender; i++) {
         var city = appState.extraCities[i];
 
         var li = document.createElement("li");
@@ -781,6 +870,11 @@
       emptyLi.textContent = EMPTY_CITY_LIST_TEXT;
       cityListEl.appendChild(emptyLi);
     }
+
+    // Syncing toggle button state:
+    // - show only if totalCities > 12
+    // - collapsed by default
+    updateCityListToggleUI(totalCities, isOverLimit);
   }
 
   // Creating "Retry geolocation" button dynamically
