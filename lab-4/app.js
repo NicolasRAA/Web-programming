@@ -100,6 +100,9 @@
     statusPanelEl.appendChild(p);
   }
 
+  // Max number of favorites allowed (extra cities only)
+  var MAX_FAVORITES = 3;
+
   /**
    * Helper for city input error message (under the input field)
    */
@@ -286,6 +289,14 @@ function handleShowCitiesClick(evt) {
     appState.favoriteCityIds = out;
   }
 
+  function enforceFavoritesLimit() {
+    if (appState.favoriteCityIds.length > MAX_FAVORITES) {
+      // Keeping only first MAX_FAVORITES in saved order
+      appState.favoriteCityIds = appState.favoriteCityIds.slice(0, MAX_FAVORITES);
+    }
+  }
+ 
+
   // Favorites first, then the rest; favorites order is favoriteCityIds order
   // Mutating extraCities so the ordering is persisted in localStorage
   function applyFavoriteOrdering() {
@@ -334,6 +345,15 @@ function handleShowCitiesClick(evt) {
     var becameFavorite = false;
 
     if (idx === -1) {
+      // Enforceingmax favorites
+      if (appState.favoriteCityIds.length >= MAX_FAVORITES) {
+        setStatusMessage(
+          "В избранном может быть максимум 3 города. Уберите один город из избранного, чтобы добавить новый.",
+          "error"
+        );
+        return;
+      }
+    
       appState.favoriteCityIds.push(cityId);
       becameFavorite = true;
     } else {
@@ -342,6 +362,7 @@ function handleShowCitiesClick(evt) {
 
     // Keeping favorites clean + reorder extraCities so favorites stay on top
     normalizeFavoriteCityIds();
+    enforceFavoritesLimit();
     applyFavoriteOrdering();
 
     // Re-render list so star icon + tag are updated immediately
@@ -1078,8 +1099,9 @@ function handleShowCitiesClick(evt) {
         appState.favoriteCityIds = [];
       }
 
-      // Clean favorites + applying ordering so favorites are on top on startup
+      // Clean favorites + enforce max + applying ordering so favorites are on top on startup
       normalizeFavoriteCityIds();
+      enforceFavoritesLimit();
       applyFavoriteOrdering();
 
       return true;
@@ -1384,6 +1406,7 @@ function handleShowCitiesClick(evt) {
 
       // Keep favorites on top after adding a new city
       normalizeFavoriteCityIds();
+      enforceFavoritesLimit();
       applyFavoriteOrdering();
 
       // Selecting newly added city so Refresh will update THIS city (less confusing)
