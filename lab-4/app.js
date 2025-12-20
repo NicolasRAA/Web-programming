@@ -37,6 +37,9 @@
     // simulated "load more" state
     isLoadMoreLoading: false,
 
+    // day details UI
+    openDayIndex: null,
+
     // Favorites only for extra cities (not for main location)
     // Persisting favorites in localStorage and restore ordering on startup
     favoriteCityIds: []
@@ -49,6 +52,9 @@
   var refreshBtn = null;
   var forecastContainerEl = null;
   var forecastTitleEl = null;
+
+  // Day details panel
+  var dayDetailsEl = null;
 
   // Forecast controls (load more)
   var forecastControlsEl = null;
@@ -503,6 +509,9 @@
   function setCurrentSelection(selection) {
     appState.currentSelection = selection;
 
+    // Closing day details when selection changes
+    hideDayDetails();
+
     renderCityList();
 
     var msg = null;
@@ -570,6 +579,9 @@
         appState.currentSelection = null;
       }
     }
+
+    // Closing details if removed city impacts current UI
+    hideDayDetails();
 
     renderCityList();
     setStatusMessage("Город удалён из списка.", "info");
@@ -1066,6 +1078,225 @@
     }
   }
 
+  // helpers to show extra info when clicking on day
+  function ensureDayDetailsPanel() {
+    if (!forecastContainerEl) return;
+    if (dayDetailsEl) return;
+
+    dayDetailsEl = document.createElement("section");
+    dayDetailsEl.className = "day-details";
+    dayDetailsEl.style.display = "none";
+
+    var parent = forecastContainerEl.parentNode;
+    if (!parent) return;
+
+    if (forecastControlsEl && forecastControlsEl.parentNode === parent) {
+      if (forecastControlsEl.nextSibling) {
+        parent.insertBefore(dayDetailsEl, forecastControlsEl.nextSibling);
+      } else {
+        parent.appendChild(dayDetailsEl);
+      }
+    } else {
+      if (forecastContainerEl.nextSibling) {
+        parent.insertBefore(dayDetailsEl, forecastContainerEl.nextSibling);
+      } else {
+        parent.appendChild(dayDetailsEl);
+      }
+    }
+  }
+
+  function clearSelectedForecastCard() {
+    if (!forecastContainerEl) return;
+    var cards = forecastContainerEl.querySelectorAll(".forecast-card[data-day-index]");
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].classList.remove("forecast-card--selected");
+    }
+  }
+  
+  function setSelectedForecastCard(dayIndex) {
+    clearSelectedForecastCard();
+    if (dayIndex === null || typeof dayIndex !== "number") return;
+  
+    var card = forecastContainerEl.querySelector(
+      '.forecast-card[data-day-index="' + String(dayIndex) + '"]'
+    );
+    if (card) {
+      card.classList.add("forecast-card--selected");
+    }
+  }  
+
+  function hideDayDetails() {
+    clearSelectedForecastCard();
+    appState.openDayIndex = null;
+    if (!dayDetailsEl) return;
+
+    while (dayDetailsEl.firstChild) {
+      dayDetailsEl.removeChild(dayDetailsEl.firstChild);
+    }
+    dayDetailsEl.style.display = "none";
+  }
+
+  function formatTimeLocal(isoStr) {
+    if (!isoStr) return "-";
+    var d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr;
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function degreesToCompass(deg) {
+    if (typeof deg !== "number") return "-";
+    var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    var ix = Math.round(deg / 45) % 8;
+    return dirs[ix] + " (" + Math.round(deg) + "°)";
+  }
+
+  function readDailyValue(data, key, index) {
+    if (!data || !data.daily || !data.daily[key]) return null;
+    return data.daily[key][index];
+  }
+
+  function renderDayDetails(index) {
+    ensureDayDetailsPanel();
+    if (!dayDetailsEl) return;
+
+    // Clear old
+    while (dayDetailsEl.firstChild) {
+      dayDetailsEl.removeChild(dayDetailsEl.firstChild);
+    }
+
+    var data = appState.weatherData;
+    var dateStr = readDailyValue(data, "time", index) || "";
+    var code = readDailyValue(data, "weathercode", index);
+    var tMax = readDailyValue(data, "temperature_2m_max", index);
+    var tMin = readDailyValue(data, "temperature_2m_min", index);
+
+    var precipSum = readDailyValue(data, "precipitation_sum", index);
+    var precipProb = readDailyValue(data, "precipitation_probability_max", index);
+    var windMax = readDailyValue(data, "windspeed_10m_max", index);
+    var gustMax = readDailyValue(data, "windgusts_10m_max", index);
+    var windDir = readDailyValue(data, "winddirection_10m_dominant", index);
+    var uvMax = readDailyValue(data, "uv_index_max", index);
+    var sunrise = readDailyValue(data, "sunrise", index);
+    var sunset = readDailyValue(data, "sunset", index);
+
+    var header = document.createElement("div");
+    header.className = "day-details-header";
+
+    var title = document.createElement("h3");
+    title.className = "day-details-title";
+    title.textContent = "Детали на " + formatDateRu(dateStr);
+
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "btn btn-secondary";
+    closeBtn.textContent = "Закрыть";
+    closeBtn.addEventListener("click", hideDayDetails);
+
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    var summary = document.createElement("p");
+    summary.className = "day-details-summary";
+
+    var desc =
+      typeof code === "number"
+        ? describeWeatherCode(code)
+        : "Описание погоды недоступно.";
+    var tLine = "";
+    if (typeof tMin === "number" && typeof tMax === "number") {
+      tLine =
+        "Температура: от " +
+        Math.round(tMin) +
+        "°C до " +
+        Math.round(tMax) +
+        "°C. ";
+    }
+    summary.textContent = tLine + desc;
+
+    var list = document.createElement("ul");
+    list.className = "day-details-list";
+
+    function addLi(label, value) {
+      var li = document.createElement("li");
+    
+      // Splitting label/value into spans to style as a metric card
+      var lab = document.createElement("span");
+      lab.className = "day-metric-label";
+      lab.textContent = label;
+    
+      var val = document.createElement("span");
+      val.className = "day-metric-value";
+      val.textContent = value;
+    
+      li.appendChild(lab);
+      li.appendChild(val);
+      list.appendChild(li);
+    }    
+
+    addLi("Осадки", typeof precipSum === "number" ? precipSum + " мм" : "-");
+    addLi("Вероятность осадков", typeof precipProb === "number" ? precipProb + "%" : "-");
+    addLi("Ветер (макс.)", typeof windMax === "number" ? windMax + " км/ч" : "-");
+    addLi("Порывы (макс.)", typeof gustMax === "number" ? gustMax + " км/ч" : "-");
+    addLi("Направление ветра", degreesToCompass(typeof windDir === "number" ? windDir : null));
+    addLi("UV индекс (макс.)", typeof uvMax === "number" ? uvMax : "-");
+    addLi("Восход", formatTimeLocal(sunrise));
+    addLi("Закат", formatTimeLocal(sunset));
+
+    dayDetailsEl.appendChild(header);
+    dayDetailsEl.appendChild(summary);
+    dayDetailsEl.appendChild(list);
+    dayDetailsEl.style.display = "block";
+  }
+
+  // Click handler for forecast day card (closure, safe with var-loop)
+  function createDayCardClickHandler(dayIndex) {
+    return function () {
+      // Guard: must have weather loaded first
+      if (!appState.weatherData || !appState.weatherData.daily) {
+        setStatusMessage("Сначала загрузите прогноз через «Обновить».", "info");
+        return;
+      }
+
+      // Guard: selection changed but forecast not refreshed
+      if (
+        appState.currentSelection &&
+        appState.lastForecastSelection &&
+        !isSameSelection(appState.currentSelection, appState.lastForecastSelection)
+      ) {
+        setStatusMessage(
+          "Вы выбрали другой город. Нажмите «Обновить», чтобы загрузить прогноз для нового выбора.",
+          "info"
+        );
+        return;
+      }
+
+      // Toggle: clicking same day closes
+      if (
+        appState.openDayIndex === dayIndex &&
+        dayDetailsEl &&
+        dayDetailsEl.style.display !== "none"
+      ) {
+        hideDayDetails();
+        return;
+      }
+
+      appState.openDayIndex = dayIndex;
+      setSelectedForecastCard(dayIndex);
+      renderDayDetails(dayIndex);
+    };
+  }
+
+  // Keyboard handler for forecast day card (Enter/Space)
+  function createDayCardKeydownHandler(dayIndex) {
+    return function (evt) {
+      var key = evt && evt.key ? evt.key : "";
+      if (key === "Enter" || key === " ") {
+        evt.preventDefault();
+        createDayCardClickHandler(dayIndex)();
+      }
+    };
+  }
+
   function hideLoadMoreControl() {
     if (!forecastControlsEl) return;
     forecastControlsEl.style.display = "none";
@@ -1406,6 +1637,15 @@
       var card = document.createElement("article");
       card.className = "forecast-card forecast-card--with-icon";
 
+      // Storing day index to highlight selected card later
+      card.setAttribute("data-day-index", String(i));
+
+      // Making day cards interactive (click / keyboard)
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      card.addEventListener("click", createDayCardClickHandler(i));
+      card.addEventListener("keydown", createDayCardKeydownHandler(i));
+
       // Header row: weekday/date on left, icon on right
       var header = document.createElement("div");
       header.className = "forecast-card-header";
@@ -1539,6 +1779,10 @@
 
     appState.isLoading = true;
     appState.lastError = null;
+
+    // Closing day details before new HTTP load (avoid mixing old details)
+    hideDayDetails();
+
     renderForecastSkeletonPlaceholders(LOADING_PLACEHOLDERS_COUNT);
 
     // Showing simple loading state through status panel
@@ -1699,6 +1943,9 @@
     cityInputEl.removeAttribute("data-city-id");
     hideSuggestions();
     setCityError("");
+
+    // Closing day details after adding a city (selection changes)
+    hideDayDetails();
 
     renderCityList();
 

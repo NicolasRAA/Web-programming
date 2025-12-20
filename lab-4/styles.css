@@ -502,3 +502,107 @@ footer a:hover {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 }
+
+/* Day details panel */
+.day-details {
+  margin-top: 18px;
+  padding: 18px 18px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.30);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.day-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.day-details-title {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+}
+
+.day-details-summary {
+  margin: 0 0 14px;
+  opacity: 0.92;
+  line-height: 1.35;
+}
+
+/* grid of metrics */
+.day-details-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.day-details-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+}
+
+.day-metric-label {
+  opacity: 0.85;
+  font-size: 14px;
+}
+
+.day-metric-value {
+  font-weight: 700;
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Subtle appear animation */
+.day-details {
+  animation: dayDetailsIn 160ms ease-out;
+}
+@keyframes dayDetailsIn {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* Forecast cards */
+
+.forecast-card[role="button"] {
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.forecast-card[role="button"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.30);
+}
+
+.forecast-card[role="button"]:focus {
+  outline: 2px solid rgba(86, 180, 233, 0.60);
+  outline-offset: 3px;
+}
+
+/* selected day card */
+.forecast-card--selected {
+  border: 1px solid rgba(86, 180, 233, 0.55);
+  box-shadow: 0 12px 34px rgba(0,0,0,0.34);
+}
+
+/* Skeleton cards should not jump on hover */
+.forecast-card--skeleton {
+  transform: none !important;
+  box-shadow: none !important;
+  cursor: default !important;
+}
